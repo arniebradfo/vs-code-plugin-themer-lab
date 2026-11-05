@@ -1,0 +1,37 @@
+name: Bug report
+description: Report a problem with colors, controls, preview, or recovery.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include secrets, private source files, or complete settings files.
+        For a security issue, use the repository's private vulnerability reporting.
+  - type: input
+    id: versions
+    attributes:
+      label: VS Code and Themer Lab versions
+      placeholder: VS Code 1.143.1; Themer Lab 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Operating system and workspace type
+      description: Include local, SSH, WSL, container, or browser, and whether the workspace is trusted.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include Dark or Light, Live Preview state, and User or Workspace Apply if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected and actual result
+      description: Add a screenshot or a short, redacted error message if useful.
+    validations:
+      required: true

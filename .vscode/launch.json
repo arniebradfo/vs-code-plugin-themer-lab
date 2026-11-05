@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Themer Lab",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "${workspaceFolder}\\.vscode-test\\manual-workspace",
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--user-data-dir=${workspaceFolder}\\.vscode-test\\manual-profile",
+        "--extensions-dir=${workspaceFolder}\\.vscode-test\\manual-extensions",
+        "--skip-welcome",
+        "--skip-release-notes"
+      ],
+      "outFiles": ["${workspaceFolder}/dist/**/*.cjs"],
+      "preLaunchTask": "npm: build"
+    }
+  ]
+}

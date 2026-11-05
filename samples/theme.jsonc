@@ -1,0 +1,17 @@
+{
+  // Compare property names, comments, values, and trailing commas.
+  "name": "Themer Lab",
+  "enabled": true,
+  "palette": {
+    "background": "#121314",
+    "foreground": "#bfbfbf",
+    "accent": "#297aa0",
+  },
+  /*
+   * These are example role names, not an importable Themer recipe.
+   * Syntax inputs have not been implemented yet.
+   */
+  "syntaxRoles": ["comment", "keyword", "string", "type", "function"],
+  "contrastTargets": [3, 4.5, 7],
+  "optionalOverride": null,
+}

@@ -1,0 +1,24 @@
+VS Code Codicons
+================
+Copyright Microsoft Corporation.
+
+The info, chevron-right, chevron-down, ellipsis, loading, window, layout, code,
+terminal, and git-branch artwork is from VS Code Codicons:
+https://github.com/microsoft/vscode-codicons
+https://github.com/microsoft/vscode-codicons/blob/main/src/icons/info.svg
+https://github.com/microsoft/vscode-codicons/blob/main/src/icons/chevron-right.svg
+https://github.com/microsoft/vscode-codicons/blob/main/src/icons/chevron-down.svg
+https://github.com/microsoft/vscode-codicons/blob/main/src/icons/ellipsis.svg
+https://github.com/microsoft/vscode-codicons/blob/main/src/icons/loading.svg
+https://github.com/microsoft/vscode-codicons/blob/main/src/icons/window.svg
+https://github.com/microsoft/vscode-codicons/blob/main/src/icons/layout.svg
+https://github.com/microsoft/vscode-codicons/blob/main/src/icons/code.svg
+https://github.com/microsoft/vscode-codicons/blob/main/src/icons/terminal.svg
+https://github.com/microsoft/vscode-codicons/blob/main/src/icons/git-branch.svg
+
+Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0):
+https://creativecommons.org/licenses/by/4.0/
+https://github.com/microsoft/vscode-codicons/blob/main/LICENSE
+
+The artwork is unchanged. SVG markup is adapted for inline, decorative webview
+icons. The chevron is rotated when its disclosure is expanded.

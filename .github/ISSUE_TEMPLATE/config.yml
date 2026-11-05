@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security issue privately
+    url: https://github.com/arniebradfo/vs-code-plugin-themer-lab/security/advisories/new
+    about: Do not disclose vulnerabilities in public issues.

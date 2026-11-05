@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Compare namespaces, attributes, entities, CDATA, and element content. -->
+<theme xmlns="urn:themer:samples"
+       xmlns:preview="urn:themer:preview"
+       name="Themer Lab"
+       enabled="true"
+       version="1">
+  <description>Syntax &amp; UI use separate palettes.</description>
+  <palette>
+    <color role="background" value="#121314" />
+    <color role="foreground" value="#bfbfbf" />
+    <color role="accent" value="#297aa0" />
+  </palette>
+  <preview:options minimumContrast="4.5" live="false">
+    <preview:language id="typescript">TypeScript</preview:language>
+    <preview:language id="python">Python</preview:language>
+  </preview:options>
+  <example><![CDATA[
+    const accent = "#297aa0";
+    const visible = contrast >= 4.5 && enabled;
+  ]]></example>
+  <note>Quoted values: &quot;accent&quot; and &apos;foreground&apos;.</note>
+</theme>

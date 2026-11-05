@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM"],
+    "types": [],
+    "strict": true,
+    "allowJs": true,
+    "checkJs": true,
+    "jsx": "preserve",
+    "noEmit": true
+  },
+  "include": ["theme.ts", "card.tsx", "palette.js"]
+}

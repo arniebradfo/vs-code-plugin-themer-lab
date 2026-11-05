@@ -1,0 +1,103 @@
+{
+  "name": "themer-lab",
+  "displayName": "Themer Lab: Live Theme Builder",
+  "description": "Create a custom theme from a few colors. Preview UI and syntax highlighting live, then apply or export your theme.",
+  "version": "0.1.0",
+  "publisher": "themer-local",
+  "private": true,
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arniebradfo/vs-code-plugin-themer-lab.git"
+  },
+  "homepage": "https://github.com/arniebradfo/vs-code-plugin-themer-lab#readme",
+  "bugs": {
+    "url": "https://github.com/arniebradfo/vs-code-plugin-themer-lab/issues"
+  },
+  "engines": {
+    "vscode": "^1.143.0"
+  },
+  "categories": ["Themes", "Other"],
+  "keywords": [
+    "theme",
+    "theme editor",
+    "theme builder",
+    "theme maker",
+    "theme creator",
+    "theme generator",
+    "theme customizer",
+    "custom theme",
+    "color theme",
+    "color palette",
+    "color picker",
+    "syntax highlighting",
+    "syntax colors",
+    "live preview"
+  ],
+  "main": "./dist/extension.cjs",
+  "activationEvents": ["onStartupFinished"],
+  "contributes": {
+    "commands": [
+      {
+        "command": "themer.open",
+        "title": "Themer Lab: Open Theme Builder"
+      },
+      {
+        "command": "themer.openSample",
+        "title": "Themer Lab: Open Syntax Sample"
+      },
+      {
+        "command": "themer.restorePreview",
+        "title": "Themer Lab: Restore Unfinished Preview"
+      },
+      {
+        "command": "themer.reviewRecovery",
+        "title": "Themer Lab: Review Unfinished Theme Settings"
+      }
+    ],
+    "themes": [
+      {
+        "id": "Themer Lab Dark",
+        "label": "Themer Lab Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/themer-base-color-theme.json"
+      },
+      {
+        "id": "Themer Lab Light",
+        "label": "Themer Lab Light",
+        "uiTheme": "vs",
+        "path": "./themes/themer-light-color-theme.json"
+      }
+    ]
+  },
+  "scripts": {
+    "capture": "tsx tools/capture.ts",
+    "evaluate": "tsx tools/evaluate.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "build": "node tools/build.mjs",
+    "vscode:prepublish": "npm run build",
+    "package": "node -e \"require('node:fs').mkdirSync('artifacts', { recursive: true })\" && vsce package --skip-license --githubBranch main --out artifacts",
+    "check:release": "tsx tools/check-release.ts",
+    "test:extension": "tsx tools/test-extension.ts",
+    "capture:syntax": "npm run build && tsx tools/test-syntax.ts --capture-only",
+    "test:syntax": "npm run build && tsx tools/test-syntax.ts",
+    "test:brackets": "npm run build && tsx tools/test-syntax.ts --brackets-only",
+    "preview:browser": "npm run build && tsx tools/browser-preview.ts",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "culori": "^4.0.2",
+    "jsonc-parser": "^3.3.1"
+  },
+  "devDependencies": {
+    "@types/culori": "^4.0.1",
+    "@types/node": "^22.15.0",
+    "@types/vscode": "^1.100.0",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.4.2",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}

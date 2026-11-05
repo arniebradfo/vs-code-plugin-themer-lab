@@ -1,0 +1,4 @@
+* text=auto eol=lf
+
+# Stored native evidence hashes the exact CRLF sample bytes.
+samples/** text eol=crlf

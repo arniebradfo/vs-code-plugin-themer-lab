@@ -1,0 +1,28 @@
+# Compare keys, anchors, aliases, scalars, and block strings.
+name: Themer Lab
+version: 1
+enabled: true
+description: >
+  A small syntax palette should work across
+  many different programming languages.
+
+defaults: &defaults
+  background: "#121314"
+  foreground: '#bfbfbf'
+  accent: "#297aa0"
+  minimumContrast: 4.5
+  optionalOverride: null
+
+previews:
+  - name: Dark
+    palette: *defaults
+    roles: [comment, keyword, string, number, type, function]
+  - name: Forest
+    palette:
+      <<: *defaults
+      accent: "#27934d"
+      minimumContrast: 7.0
+
+notes: |
+  UI accents must not recolor keywords.
+  Inspect both grammar and semantic token colors.

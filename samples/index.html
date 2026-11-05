@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Themer Lab preview</title>
+    <link rel="stylesheet" href="theme.css">
+  </head>
+  <body>
+    <!-- Compare tags, attributes, entities, and embedded languages. -->
+    <main class="theme-card" data-theme="dark">
+      <h1>Syntax &amp; surface preview</h1>
+      <p>Choose an accent without changing the <em>syntax palette</em>.</p>
+      <label for="accent">Accent color</label>
+      <input id="accent" name="accent" type="color" value="#297aa0">
+      <button id="preview" type="button" aria-describedby="status">
+        Preview theme
+      </button>
+      <output id="status" aria-live="polite">Ready to preview</output>
+    </main>
+    <script type="module">
+      const button = document.querySelector("#preview");
+      const output = document.querySelector("#status");
+      button?.addEventListener("click", () => {
+        if (output) output.textContent = `Preview updated at ${new Date().toLocaleTimeString()}`;
+      });
+    </script>
+  </body>
+</html>

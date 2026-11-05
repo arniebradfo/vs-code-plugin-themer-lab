@@ -1,0 +1,1220 @@
+{
+  "schemaVersion": 2,
+  "source": {
+    "vscode": {
+      "version": "1.143.0",
+      "commit": "2d0b7506a36c1d6db9a466440131a8e01eab2289"
+    },
+    "theme": {
+      "id": "Dark 2026",
+      "name": "2026 Dark",
+      "type": "dark"
+    },
+    "sources": [
+      {
+        "path": "extensions/theme-defaults/themes/dark_vs.json",
+        "sha256": "38db2163183afd088cf621115087b60a23726856488eabc9fb893aff15b35470"
+      },
+      {
+        "path": "extensions/theme-defaults/themes/dark_plus.json",
+        "sha256": "88f5b662378cbe39473a4a8d916a1b4ec580f85858876eaec440288aee2852df"
+      },
+      {
+        "path": "extensions/theme-defaults/themes/dark_modern.json",
+        "sha256": "24e2c79cd2c37769a83f1a89c5e97c8107fd0ec084cd7a021c2ab835d3809074"
+      },
+      {
+        "path": "extensions/theme-defaults/themes/2026-dark.json",
+        "sha256": "54aa033434ff9d073ef32ae19f40023e2c3bf921b40d00557511dbf2f2971299"
+      }
+    ],
+    "runtime": {
+      "version": "1.143.1",
+      "commit": "e646868227c3e3a9e3f24277c8c7220be42c0be7"
+    },
+    "themeSourcesVerified": true
+  },
+  "method": "Actual computed foreground colors from the isolated native editor; whitespace is excluded from counts.",
+  "samples": [
+    {
+      "file": "theme.ts",
+      "language": "typescript",
+      "sha256": "f812853ff03612fcf77111e17723aa9ccc06ba2d857e88a0c0aaf522a2c3dee2",
+      "mode": "grammar-only",
+      "lineCount": 58,
+      "semanticProvider": null,
+      "colors": {
+        "#4ec9b0": 167,
+        "#569cd6": 106,
+        "#79c0ff": 82,
+        "#8b949e": 126,
+        "#9cdcfe": 57,
+        "#a5d6ff": 165,
+        "#b5cea8": 9,
+        "#bbbebf": 53,
+        "#c586c0": 88,
+        "#c9d1d9": 242,
+        "#d2a8ff": 75,
+        "#d4d4d4": 52,
+        "#ff7b72": 75,
+        "#ffa657": 69
+      }
+    },
+    {
+      "file": "card.tsx",
+      "language": "typescriptreact",
+      "sha256": "798c000304f7f2c3530ee8d2a1cd9f0ba57ca5e79ed5ded222eb870fe9b5f7cd",
+      "mode": "grammar-only",
+      "lineCount": 44,
+      "semanticProvider": null,
+      "colors": {
+        "#4ec9b0": 151,
+        "#569cd6": 27,
+        "#79c0ff": 6,
+        "#7ee787": 32,
+        "#808080": 20,
+        "#8b949e": 124,
+        "#9cdcfe": 48,
+        "#a5d6ff": 86,
+        "#bbbebf": 16,
+        "#c586c0": 18,
+        "#c9d1d9": 102,
+        "#d2a8ff": 45,
+        "#d4d4d4": 42,
+        "#ff7b72": 69,
+        "#ffa657": 127
+      }
+    },
+    {
+      "file": "palette.js",
+      "language": "javascript",
+      "sha256": "726712b9debd08e7e30d4f7f2a8847f029d19ecc86ed90c38c4735d5f7399bf8",
+      "mode": "grammar-only",
+      "lineCount": 38,
+      "semanticProvider": null,
+      "colors": {
+        "#4ec9b0": 15,
+        "#569cd6": 40,
+        "#79c0ff": 76,
+        "#8b949e": 92,
+        "#9cdcfe": 31,
+        "#a5d6ff": 101,
+        "#b5cea8": 1,
+        "#bbbebf": 15,
+        "#c586c0": 39,
+        "#c9d1d9": 177,
+        "#ce9178": 2,
+        "#d16969": 2,
+        "#d2a8ff": 52,
+        "#d4d4d4": 24,
+        "#d7ba7d": 5,
+        "#dcdcaa": 2,
+        "#ff7b72": 58,
+        "#ffa657": 42
+      }
+    },
+    {
+      "file": "theme.py",
+      "language": "python",
+      "sha256": "90a132c1350d7ab18b48101544bbdb26d5b0c1afa2d73a6975eacf4bb98f4e59",
+      "mode": "grammar-only",
+      "lineCount": 45,
+      "semanticProvider": null,
+      "colors": {
+        "#4ec9b0": 61,
+        "#569cd6": 24,
+        "#79c0ff": 62,
+        "#8b949e": 60,
+        "#a5d6ff": 176,
+        "#b5cea8": 6,
+        "#bbbebf": 298,
+        "#c586c0": 77,
+        "#c9d1d9": 20,
+        "#d16969": 9,
+        "#d2a8ff": 30,
+        "#d4d4d4": 12,
+        "#d7ba7d": 3,
+        "#dcdcaa": 5,
+        "#ff7b72": 53,
+        "#ffa657": 22
+      }
+    },
+    {
+      "file": "theme.go",
+      "language": "go",
+      "sha256": "fa2fc225d01960a618a4cdcc21ec93d8602381329a58db06dba37e03d64e144e",
+      "mode": "grammar-only",
+      "lineCount": 56,
+      "semanticProvider": null,
+      "colors": {
+        "#4ec9b0": 118,
+        "#569cd6": 10,
+        "#79c0ff": 26,
+        "#8b949e": 62,
+        "#a5d6ff": 84,
+        "#b5cea8": 1,
+        "#bbbebf": 101,
+        "#c586c0": 34,
+        "#c9d1d9": 209,
+        "#d2a8ff": 95,
+        "#d4d4d4": 16,
+        "#d7ba7d": 2,
+        "#ff7b72": 68,
+        "#ffa657": 31
+      }
+    },
+    {
+      "file": "theme.rs",
+      "language": "rust",
+      "sha256": "462a5a7adb6a68ae3f3cc790e80bfc81508956e0688a6dd65ebdfbd80aeb81c0",
+      "mode": "grammar-only",
+      "lineCount": 50,
+      "semanticProvider": null,
+      "colors": {
+        "#4ec9b0": 230,
+        "#569cd6": 3,
+        "#79c0ff": 32,
+        "#8b949e": 64,
+        "#a5d6ff": 120,
+        "#bbbebf": 177,
+        "#c586c0": 14,
+        "#c9d1d9": 102,
+        "#d2a8ff": 99,
+        "#d4d4d4": 60,
+        "#d7ba7d": 2,
+        "#ff7b72": 35
+      }
+    },
+    {
+      "file": "Theme.java",
+      "language": "java",
+      "sha256": "90a0582e921221a8a0b51879b8b24ff150558c26aed298e1fa2d8b64063ece8c",
+      "mode": "grammar-only",
+      "lineCount": 44,
+      "semanticProvider": null,
+      "colors": {
+        "#4ec9b0": 64,
+        "#569cd6": 82,
+        "#79c0ff": 26,
+        "#8b949e": 73,
+        "#a5d6ff": 55,
+        "#bbbebf": 174,
+        "#c586c0": 11,
+        "#c9d1d9": 187,
+        "#d2a8ff": 147,
+        "#d4d4d4": 53,
+        "#ff7b72": 25,
+        "#ffa657": 17
+      }
+    },
+    {
+      "file": "Theme.cs",
+      "language": "csharp",
+      "sha256": "eb7f38a16d041160b21d0c53ab4a3b27d4737099f22880004c4eeef3b8af9acc",
+      "mode": "grammar-only",
+      "lineCount": 46,
+      "semanticProvider": null,
+      "colors": {
+        "#4ec9b0": 150,
+        "#569cd6": 80,
+        "#8b949e": 64,
+        "#9cdcfe": 101,
+        "#a5d6ff": 70,
+        "#b5cea8": 5,
+        "#bbbebf": 94,
+        "#c586c0": 56,
+        "#c9d1d9": 166,
+        "#d2a8ff": 61,
+        "#d4d4d4": 32,
+        "#ff7b72": 89
+      }
+    },
+    {
+      "file": "theme.c",
+      "language": "c",
+      "sha256": "3f5a7b3ebbd4b8497f7688c885f06575bf7cfff79326591fd54bcf929761dc8f",
+      "mode": "grammar-only",
+      "lineCount": 39,
+      "semanticProvider": null,
+      "colors": {
+        "#569cd6": 55,
+        "#8b949e": 71,
+        "#a5d6ff": 95,
+        "#b5cea8": 6,
+        "#bbbebf": 26,
+        "#c586c0": 54,
+        "#c9d1d9": 269,
+        "#d2a8ff": 36,
+        "#d4d4d4": 20,
+        "#d7ba7d": 2,
+        "#ff7b72": 67,
+        "#ffa657": 23
+      }
+    },
+    {
+      "file": "theme.cpp",
+      "language": "cpp",
+      "sha256": "33f4deb90bcf8dee28ad2ee6c358a906b51f82b00b6d94c751dda63e389350b7",
+      "mode": "grammar-only",
+      "lineCount": 48,
+      "semanticProvider": null,
+      "colors": {
+        "#4ec9b0": 211,
+        "#569cd6": 69,
+        "#79c0ff": 4,
+        "#8b949e": 67,
+        "#a5d6ff": 134,
+        "#b5cea8": 2,
+        "#bbbebf": 40,
+        "#c586c0": 67,
+        "#c9d1d9": 247,
+        "#d2a8ff": 43,
+        "#d4d4d4": 20,
+        "#d7ba7d": 4,
+        "#ff7b72": 82,
+        "#ffa657": 22
+      }
+    },
+    {
+      "file": "theme.rb",
+      "language": "ruby",
+      "sha256": "2da42c46f72f31dacdf59fa0d6d53d274df13b605b7c6e0c05e6c473d516a331",
+      "mode": "grammar-only",
+      "lineCount": 32,
+      "semanticProvider": null,
+      "colors": {
+        "#4ec9b0": 24,
+        "#569cd6": 69,
+        "#79c0ff": 74,
+        "#7ee787": 4,
+        "#8b949e": 69,
+        "#a5d6ff": 87,
+        "#b5cea8": 9,
+        "#bbbebf": 59,
+        "#c586c0": 52,
+        "#c9d1d9": 48,
+        "#d2a8ff": 70,
+        "#d4d4d4": 51,
+        "#d7ba7d": 4,
+        "#dcdcaa": 4,
+        "#ff7b72": 40,
+        "#ffa657": 9
+      }
+    },
+    {
+      "file": "theme.php",
+      "language": "php",
+      "sha256": "55fa7fb40ae1f1ae5a28659cb02b2e0e2b834292c538a3963ef1efaff3732048",
+      "mode": "grammar-only",
+      "lineCount": 40,
+      "semanticProvider": null,
+      "colors": {
+        "#4ec9b0": 40,
+        "#569cd6": 69,
+        "#79c0ff": 74,
+        "#8b949e": 84,
+        "#9cdcfe": 10,
+        "#a5d6ff": 80,
+        "#b5cea8": 1,
+        "#c586c0": 28,
+        "#c9d1d9": 92,
+        "#d2a8ff": 12,
+        "#d4d4d4": 87,
+        "#d7ba7d": 2,
+        "#dcdcaa": 15,
+        "#ff7b72": 94
+      }
+    },
+    {
+      "file": "themes.sql",
+      "language": "sql",
+      "sha256": "7c9943a93a43c999a882eab7f5b5a309bd0df8849d3614454d9422daca0e37f1",
+      "mode": "grammar-only",
+      "lineCount": 37,
+      "semanticProvider": null,
+      "colors": {
+        "#569cd6": 22,
+        "#8b949e": 70,
+        "#a5d6ff": 118,
+        "#b5cea8": 11,
+        "#bbbebf": 250,
+        "#d2a8ff": 6,
+        "#d4d4d4": 6,
+        "#dcdcaa": 23,
+        "#ff7b72": 248
+      }
+    },
+    {
+      "file": "index.html",
+      "language": "html",
+      "sha256": "191e0ded8d8fd157c519356e711f74868ad2c22cb55e304bcd3925f23ab522c7",
+      "mode": "grammar-only",
+      "lineCount": 30,
+      "semanticProvider": null,
+      "colors": {
+        "#569cd6": 6,
+        "#79c0ff": 12,
+        "#7ee787": 122,
+        "#808080": 71,
+        "#8b949e": 60,
+        "#9cdcfe": 103,
+        "#a5d6ff": 231,
+        "#bbbebf": 137,
+        "#c586c0": 2,
+        "#c9d1d9": 51,
+        "#d2a8ff": 64,
+        "#d4d4d4": 25,
+        "#ff7b72": 17
+      }
+    },
+    {
+      "file": "theme.css",
+      "language": "css",
+      "sha256": "7729eb6b975bee5d1ffdc02568a98419198498ec5ccf2a90f6e9f40e4285dd16",
+      "mode": "grammar-only",
+      "lineCount": 46,
+      "semanticProvider": null,
+      "colors": {
+        "#8b949e": 66,
+        "#9cdcfe": 239,
+        "#a5d6ff": 6,
+        "#b5cea8": 68,
+        "#bbbebf": 142,
+        "#c586c0": 24,
+        "#ce9178": 88,
+        "#d4d4d4": 2,
+        "#d7ba7d": 82,
+        "#dcdcaa": 36
+      }
+    },
+    {
+      "file": "theme.scss",
+      "language": "scss",
+      "sha256": "6ad6799903b502ae52f43bacafbfb5f3c3c6cdea89d9894886ec3a7fec85db6c",
+      "mode": "grammar-only",
+      "lineCount": 44,
+      "semanticProvider": null,
+      "colors": {
+        "#7ee787": 3,
+        "#8b949e": 64,
+        "#9cdcfe": 305,
+        "#a5d6ff": 44,
+        "#b5cea8": 17,
+        "#bbbebf": 61,
+        "#c586c0": 41,
+        "#ce9178": 26,
+        "#d2a8ff": 20,
+        "#d4d4d4": 1,
+        "#d7ba7d": 46,
+        "#dcdcaa": 28,
+        "#ffa657": 12
+      }
+    },
+    {
+      "file": "theme.json",
+      "language": "json",
+      "sha256": "454425af4f566e50cc6ee9395569294ccf951452c6f1c48ffc25cc0344e79f45",
+      "mode": "grammar-only",
+      "lineCount": 27,
+      "semanticProvider": null,
+      "colors": {
+        "#569cd6": 13,
+        "#7ee787": 149,
+        "#a5d6ff": 160,
+        "#b5cea8": 10,
+        "#bbbebf": 43,
+        "#d7ba7d": 2
+      }
+    },
+    {
+      "file": "theme.jsonc",
+      "language": "jsonc",
+      "sha256": "300a320b67c64264d077f255deb8e9becb221d907872d4277b395a5cc0bc59f3",
+      "mode": "grammar-only",
+      "lineCount": 18,
+      "semanticProvider": null,
+      "colors": {
+        "#569cd6": 8,
+        "#7ee787": 104,
+        "#8b949e": 154,
+        "#a5d6ff": 80,
+        "#b5cea8": 5,
+        "#bbbebf": 32
+      }
+    },
+    {
+      "file": "theme.yaml",
+      "language": "yaml",
+      "sha256": "b1d2e7e385a60e4d572e9c0ea58aabd6f23532e9a5697ad2345b80f64f1b0816",
+      "mode": "grammar-only",
+      "lineCount": 29,
+      "semanticProvider": null,
+      "colors": {
+        "#569cd6": 8,
+        "#7ee787": 157,
+        "#8b949e": 53,
+        "#a5d6ff": 235,
+        "#b5cea8": 7,
+        "#bbbebf": 12,
+        "#c586c0": 5,
+        "#c9d1d9": 41
+      }
+    },
+    {
+      "file": "theme.xml",
+      "language": "xml",
+      "sha256": "ca1b32c7214b53c1f769adb0636c3b24269dce88d498bdb421829279b792ddb1",
+      "mode": "grammar-only",
+      "lineCount": 24,
+      "semanticProvider": null,
+      "colors": {
+        "#7ee787": 180,
+        "#808080": 53,
+        "#8b949e": 69,
+        "#9cdcfe": 101,
+        "#a5d6ff": 233,
+        "#bbbebf": 94,
+        "#ff7b72": 29
+      }
+    },
+    {
+      "file": "guide.md",
+      "language": "markdown",
+      "sha256": "3d827a54e188974fef17cbc98f8d3b7f8fc65d7376c7b12848933a76a17ea4d1",
+      "mode": "grammar-only",
+      "lineCount": 50,
+      "semanticProvider": null,
+      "colors": {
+        "#4ec9b0": 28,
+        "#569cd6": 14,
+        "#6a9955": 2,
+        "#79c0ff": 99,
+        "#7ee787": 174,
+        "#808080": 15,
+        "#a5d6ff": 40,
+        "#b5cea8": 3,
+        "#bbbebf": 661,
+        "#c586c0": 12,
+        "#c9d1d9": 39,
+        "#d2a8ff": 8,
+        "#d4d4d4": 20,
+        "#ff7b72": 17,
+        "#ffa657": 24
+      }
+    },
+    {
+      "file": "preview.sh",
+      "language": "shellscript",
+      "sha256": "e0c799a5bc0a3d0b0bd5aec45f1e1c9a86c6a4fa088f4782fde08694c5afd81c",
+      "mode": "grammar-only",
+      "lineCount": 30,
+      "semanticProvider": null,
+      "colors": {
+        "#569cd6": 31,
+        "#79c0ff": 16,
+        "#8b949e": 86,
+        "#a5d6ff": 160,
+        "#b5cea8": 3,
+        "#bbbebf": 21,
+        "#c586c0": 39,
+        "#c9d1d9": 153,
+        "#d2a8ff": 14,
+        "#d4d4d4": 30,
+        "#d7ba7d": 2,
+        "#dcdcaa": 27,
+        "#ffa657": 14
+      }
+    },
+    {
+      "file": "preview.ps1",
+      "language": "powershell",
+      "sha256": "51790e3827c2d1957eceba2984df0a0bf28d3b78bb539be72b4b1531b8fab9db",
+      "mode": "grammar-only",
+      "lineCount": 43,
+      "semanticProvider": null,
+      "colors": {
+        "#569cd6": 10,
+        "#79c0ff": 4,
+        "#8b949e": 66,
+        "#a5d6ff": 126,
+        "#b5cea8": 6,
+        "#bbbebf": 74,
+        "#c586c0": 16,
+        "#c9d1d9": 178,
+        "#d2a8ff": 16,
+        "#d4d4d4": 34,
+        "#dcdcaa": 155,
+        "#ff7b72": 63,
+        "#ffa657": 9
+      }
+    },
+    {
+      "file": "Dockerfile",
+      "language": "dockerfile",
+      "sha256": "064d62b3ee5205f79a007c5114936e2b09b9f9c17daddb17ac214ac5bb35e05d",
+      "mode": "grammar-only",
+      "lineCount": 18,
+      "semanticProvider": null,
+      "colors": {
+        "#8b949e": 65,
+        "#a5d6ff": 79,
+        "#bbbebf": 192,
+        "#ff7b72": 41
+      }
+    },
+    {
+      "file": "theme.ts",
+      "language": "typescript",
+      "sha256": "f812853ff03612fcf77111e17723aa9ccc06ba2d857e88a0c0aaf522a2c3dee2",
+      "mode": "semantic-enabled",
+      "lineCount": 58,
+      "semanticProvider": {
+        "available": true,
+        "tokenCount": 79,
+        "tokenTypes": [
+          "class",
+          "enum",
+          "enumMember",
+          "function",
+          "interface",
+          "method",
+          "parameter",
+          "property",
+          "type",
+          "typeParameter",
+          "variable"
+        ]
+      },
+      "colors": {
+        "#4ec9b0": 229,
+        "#569cd6": 106,
+        "#79c0ff": 192,
+        "#8b949e": 126,
+        "#9cdcfe": 6,
+        "#a5d6ff": 165,
+        "#b5cea8": 9,
+        "#bbbebf": 53,
+        "#c586c0": 88,
+        "#c9d1d9": 165,
+        "#d2a8ff": 42,
+        "#d4d4d4": 52,
+        "#ff7b72": 75,
+        "#ffa657": 58
+      }
+    },
+    {
+      "file": "card.tsx",
+      "language": "typescriptreact",
+      "sha256": "798c000304f7f2c3530ee8d2a1cd9f0ba57ca5e79ed5ded222eb870fe9b5f7cd",
+      "mode": "semantic-enabled",
+      "lineCount": 44,
+      "semanticProvider": {
+        "available": true,
+        "tokenCount": 41,
+        "tokenTypes": [
+          "function",
+          "interface",
+          "method",
+          "namespace",
+          "parameter",
+          "property",
+          "variable"
+        ]
+      },
+      "colors": {
+        "#4ec9b0": 157,
+        "#569cd6": 27,
+        "#79c0ff": 22,
+        "#7ee787": 32,
+        "#808080": 20,
+        "#8b949e": 124,
+        "#9cdcfe": 48,
+        "#a5d6ff": 86,
+        "#bbbebf": 16,
+        "#c586c0": 18,
+        "#c9d1d9": 139,
+        "#d2a8ff": 54,
+        "#d4d4d4": 42,
+        "#ff7b72": 69,
+        "#ffa657": 59
+      }
+    },
+    {
+      "file": "palette.js",
+      "language": "javascript",
+      "sha256": "726712b9debd08e7e30d4f7f2a8847f029d19ecc86ed90c38c4735d5f7399bf8",
+      "mode": "semantic-enabled",
+      "lineCount": 38,
+      "semanticProvider": {
+        "available": true,
+        "tokenCount": 40,
+        "tokenTypes": [
+          "class",
+          "method",
+          "parameter",
+          "property",
+          "variable"
+        ]
+      },
+      "colors": {
+        "#4ec9b0": 38,
+        "#569cd6": 40,
+        "#79c0ff": 112,
+        "#8b949e": 92,
+        "#9cdcfe": 4,
+        "#a5d6ff": 101,
+        "#b5cea8": 1,
+        "#bbbebf": 15,
+        "#c586c0": 39,
+        "#c9d1d9": 147,
+        "#ce9178": 2,
+        "#d16969": 2,
+        "#d2a8ff": 25,
+        "#d4d4d4": 24,
+        "#d7ba7d": 5,
+        "#dcdcaa": 2,
+        "#ff7b72": 58,
+        "#ffa657": 67
+      }
+    },
+    {
+      "file": "theme.py",
+      "language": "python",
+      "sha256": "90a132c1350d7ab18b48101544bbdb26d5b0c1afa2d73a6975eacf4bb98f4e59",
+      "mode": "semantic-enabled",
+      "lineCount": 45,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#4ec9b0": 61,
+        "#569cd6": 24,
+        "#79c0ff": 62,
+        "#8b949e": 60,
+        "#a5d6ff": 176,
+        "#b5cea8": 6,
+        "#bbbebf": 298,
+        "#c586c0": 77,
+        "#c9d1d9": 20,
+        "#d16969": 9,
+        "#d2a8ff": 30,
+        "#d4d4d4": 12,
+        "#d7ba7d": 3,
+        "#dcdcaa": 5,
+        "#ff7b72": 53,
+        "#ffa657": 22
+      }
+    },
+    {
+      "file": "theme.go",
+      "language": "go",
+      "sha256": "fa2fc225d01960a618a4cdcc21ec93d8602381329a58db06dba37e03d64e144e",
+      "mode": "semantic-enabled",
+      "lineCount": 56,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#4ec9b0": 118,
+        "#569cd6": 10,
+        "#79c0ff": 26,
+        "#8b949e": 62,
+        "#a5d6ff": 84,
+        "#b5cea8": 1,
+        "#bbbebf": 101,
+        "#c586c0": 34,
+        "#c9d1d9": 209,
+        "#d2a8ff": 95,
+        "#d4d4d4": 16,
+        "#d7ba7d": 2,
+        "#ff7b72": 68,
+        "#ffa657": 31
+      }
+    },
+    {
+      "file": "theme.rs",
+      "language": "rust",
+      "sha256": "462a5a7adb6a68ae3f3cc790e80bfc81508956e0688a6dd65ebdfbd80aeb81c0",
+      "mode": "semantic-enabled",
+      "lineCount": 50,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#4ec9b0": 230,
+        "#569cd6": 3,
+        "#79c0ff": 32,
+        "#8b949e": 64,
+        "#a5d6ff": 120,
+        "#bbbebf": 177,
+        "#c586c0": 14,
+        "#c9d1d9": 102,
+        "#d2a8ff": 99,
+        "#d4d4d4": 60,
+        "#d7ba7d": 2,
+        "#ff7b72": 35
+      }
+    },
+    {
+      "file": "Theme.java",
+      "language": "java",
+      "sha256": "90a0582e921221a8a0b51879b8b24ff150558c26aed298e1fa2d8b64063ece8c",
+      "mode": "semantic-enabled",
+      "lineCount": 44,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#4ec9b0": 64,
+        "#569cd6": 82,
+        "#79c0ff": 26,
+        "#8b949e": 73,
+        "#a5d6ff": 55,
+        "#bbbebf": 174,
+        "#c586c0": 11,
+        "#c9d1d9": 187,
+        "#d2a8ff": 147,
+        "#d4d4d4": 53,
+        "#ff7b72": 25,
+        "#ffa657": 17
+      }
+    },
+    {
+      "file": "Theme.cs",
+      "language": "csharp",
+      "sha256": "eb7f38a16d041160b21d0c53ab4a3b27d4737099f22880004c4eeef3b8af9acc",
+      "mode": "semantic-enabled",
+      "lineCount": 46,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#4ec9b0": 150,
+        "#569cd6": 80,
+        "#8b949e": 64,
+        "#9cdcfe": 101,
+        "#a5d6ff": 70,
+        "#b5cea8": 5,
+        "#bbbebf": 94,
+        "#c586c0": 56,
+        "#c9d1d9": 166,
+        "#d2a8ff": 61,
+        "#d4d4d4": 32,
+        "#ff7b72": 89
+      }
+    },
+    {
+      "file": "theme.c",
+      "language": "c",
+      "sha256": "3f5a7b3ebbd4b8497f7688c885f06575bf7cfff79326591fd54bcf929761dc8f",
+      "mode": "semantic-enabled",
+      "lineCount": 39,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#569cd6": 55,
+        "#8b949e": 71,
+        "#a5d6ff": 95,
+        "#b5cea8": 6,
+        "#bbbebf": 26,
+        "#c586c0": 54,
+        "#c9d1d9": 269,
+        "#d2a8ff": 36,
+        "#d4d4d4": 20,
+        "#d7ba7d": 2,
+        "#ff7b72": 67,
+        "#ffa657": 23
+      }
+    },
+    {
+      "file": "theme.cpp",
+      "language": "cpp",
+      "sha256": "33f4deb90bcf8dee28ad2ee6c358a906b51f82b00b6d94c751dda63e389350b7",
+      "mode": "semantic-enabled",
+      "lineCount": 48,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#4ec9b0": 211,
+        "#569cd6": 69,
+        "#79c0ff": 4,
+        "#8b949e": 67,
+        "#a5d6ff": 134,
+        "#b5cea8": 2,
+        "#bbbebf": 40,
+        "#c586c0": 67,
+        "#c9d1d9": 247,
+        "#d2a8ff": 43,
+        "#d4d4d4": 20,
+        "#d7ba7d": 4,
+        "#ff7b72": 82,
+        "#ffa657": 22
+      }
+    },
+    {
+      "file": "theme.rb",
+      "language": "ruby",
+      "sha256": "2da42c46f72f31dacdf59fa0d6d53d274df13b605b7c6e0c05e6c473d516a331",
+      "mode": "semantic-enabled",
+      "lineCount": 32,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#4ec9b0": 24,
+        "#569cd6": 69,
+        "#79c0ff": 74,
+        "#7ee787": 4,
+        "#8b949e": 69,
+        "#a5d6ff": 87,
+        "#b5cea8": 9,
+        "#bbbebf": 59,
+        "#c586c0": 52,
+        "#c9d1d9": 48,
+        "#d2a8ff": 70,
+        "#d4d4d4": 51,
+        "#d7ba7d": 4,
+        "#dcdcaa": 4,
+        "#ff7b72": 40,
+        "#ffa657": 9
+      }
+    },
+    {
+      "file": "theme.php",
+      "language": "php",
+      "sha256": "55fa7fb40ae1f1ae5a28659cb02b2e0e2b834292c538a3963ef1efaff3732048",
+      "mode": "semantic-enabled",
+      "lineCount": 40,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#4ec9b0": 40,
+        "#569cd6": 69,
+        "#79c0ff": 74,
+        "#8b949e": 84,
+        "#9cdcfe": 10,
+        "#a5d6ff": 80,
+        "#b5cea8": 1,
+        "#c586c0": 28,
+        "#c9d1d9": 92,
+        "#d2a8ff": 12,
+        "#d4d4d4": 87,
+        "#d7ba7d": 2,
+        "#dcdcaa": 15,
+        "#ff7b72": 94
+      }
+    },
+    {
+      "file": "themes.sql",
+      "language": "sql",
+      "sha256": "7c9943a93a43c999a882eab7f5b5a309bd0df8849d3614454d9422daca0e37f1",
+      "mode": "semantic-enabled",
+      "lineCount": 37,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#569cd6": 22,
+        "#8b949e": 70,
+        "#a5d6ff": 118,
+        "#b5cea8": 11,
+        "#bbbebf": 250,
+        "#d2a8ff": 6,
+        "#d4d4d4": 6,
+        "#dcdcaa": 23,
+        "#ff7b72": 248
+      }
+    },
+    {
+      "file": "index.html",
+      "language": "html",
+      "sha256": "191e0ded8d8fd157c519356e711f74868ad2c22cb55e304bcd3925f23ab522c7",
+      "mode": "semantic-enabled",
+      "lineCount": 30,
+      "semanticProvider": {
+        "available": true,
+        "tokenCount": 13,
+        "tokenTypes": [
+          "class",
+          "method",
+          "property",
+          "variable"
+        ]
+      },
+      "colors": {
+        "#4ec9b0": 4,
+        "#569cd6": 6,
+        "#79c0ff": 57,
+        "#7ee787": 122,
+        "#808080": 71,
+        "#8b949e": 60,
+        "#9cdcfe": 103,
+        "#a5d6ff": 231,
+        "#bbbebf": 137,
+        "#c586c0": 2,
+        "#c9d1d9": 6,
+        "#d2a8ff": 60,
+        "#d4d4d4": 25,
+        "#ff7b72": 17
+      }
+    },
+    {
+      "file": "theme.css",
+      "language": "css",
+      "sha256": "7729eb6b975bee5d1ffdc02568a98419198498ec5ccf2a90f6e9f40e4285dd16",
+      "mode": "semantic-enabled",
+      "lineCount": 46,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#8b949e": 66,
+        "#9cdcfe": 239,
+        "#a5d6ff": 6,
+        "#b5cea8": 68,
+        "#bbbebf": 142,
+        "#c586c0": 24,
+        "#ce9178": 88,
+        "#d4d4d4": 2,
+        "#d7ba7d": 82,
+        "#dcdcaa": 36
+      }
+    },
+    {
+      "file": "theme.scss",
+      "language": "scss",
+      "sha256": "6ad6799903b502ae52f43bacafbfb5f3c3c6cdea89d9894886ec3a7fec85db6c",
+      "mode": "semantic-enabled",
+      "lineCount": 44,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#7ee787": 3,
+        "#8b949e": 64,
+        "#9cdcfe": 305,
+        "#a5d6ff": 44,
+        "#b5cea8": 17,
+        "#bbbebf": 61,
+        "#c586c0": 41,
+        "#ce9178": 26,
+        "#d2a8ff": 20,
+        "#d4d4d4": 1,
+        "#d7ba7d": 46,
+        "#dcdcaa": 28,
+        "#ffa657": 12
+      }
+    },
+    {
+      "file": "theme.json",
+      "language": "json",
+      "sha256": "454425af4f566e50cc6ee9395569294ccf951452c6f1c48ffc25cc0344e79f45",
+      "mode": "semantic-enabled",
+      "lineCount": 27,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#569cd6": 13,
+        "#7ee787": 149,
+        "#a5d6ff": 160,
+        "#b5cea8": 10,
+        "#bbbebf": 43,
+        "#d7ba7d": 2
+      }
+    },
+    {
+      "file": "theme.jsonc",
+      "language": "jsonc",
+      "sha256": "300a320b67c64264d077f255deb8e9becb221d907872d4277b395a5cc0bc59f3",
+      "mode": "semantic-enabled",
+      "lineCount": 18,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#569cd6": 8,
+        "#7ee787": 104,
+        "#8b949e": 154,
+        "#a5d6ff": 80,
+        "#b5cea8": 5,
+        "#bbbebf": 32
+      }
+    },
+    {
+      "file": "theme.yaml",
+      "language": "yaml",
+      "sha256": "b1d2e7e385a60e4d572e9c0ea58aabd6f23532e9a5697ad2345b80f64f1b0816",
+      "mode": "semantic-enabled",
+      "lineCount": 29,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#569cd6": 8,
+        "#7ee787": 157,
+        "#8b949e": 53,
+        "#a5d6ff": 235,
+        "#b5cea8": 7,
+        "#bbbebf": 12,
+        "#c586c0": 5,
+        "#c9d1d9": 41
+      }
+    },
+    {
+      "file": "theme.xml",
+      "language": "xml",
+      "sha256": "ca1b32c7214b53c1f769adb0636c3b24269dce88d498bdb421829279b792ddb1",
+      "mode": "semantic-enabled",
+      "lineCount": 24,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#7ee787": 180,
+        "#808080": 53,
+        "#8b949e": 69,
+        "#9cdcfe": 101,
+        "#a5d6ff": 233,
+        "#bbbebf": 94,
+        "#ff7b72": 29
+      }
+    },
+    {
+      "file": "guide.md",
+      "language": "markdown",
+      "sha256": "3d827a54e188974fef17cbc98f8d3b7f8fc65d7376c7b12848933a76a17ea4d1",
+      "mode": "semantic-enabled",
+      "lineCount": 50,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#4ec9b0": 28,
+        "#569cd6": 14,
+        "#6a9955": 2,
+        "#79c0ff": 99,
+        "#7ee787": 174,
+        "#808080": 15,
+        "#a5d6ff": 40,
+        "#b5cea8": 3,
+        "#bbbebf": 661,
+        "#c586c0": 12,
+        "#c9d1d9": 39,
+        "#d2a8ff": 8,
+        "#d4d4d4": 20,
+        "#ff7b72": 17,
+        "#ffa657": 24
+      }
+    },
+    {
+      "file": "preview.sh",
+      "language": "shellscript",
+      "sha256": "e0c799a5bc0a3d0b0bd5aec45f1e1c9a86c6a4fa088f4782fde08694c5afd81c",
+      "mode": "semantic-enabled",
+      "lineCount": 30,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#569cd6": 31,
+        "#79c0ff": 16,
+        "#8b949e": 86,
+        "#a5d6ff": 160,
+        "#b5cea8": 3,
+        "#bbbebf": 21,
+        "#c586c0": 39,
+        "#c9d1d9": 153,
+        "#d2a8ff": 14,
+        "#d4d4d4": 30,
+        "#d7ba7d": 2,
+        "#dcdcaa": 27,
+        "#ffa657": 14
+      }
+    },
+    {
+      "file": "preview.ps1",
+      "language": "powershell",
+      "sha256": "51790e3827c2d1957eceba2984df0a0bf28d3b78bb539be72b4b1531b8fab9db",
+      "mode": "semantic-enabled",
+      "lineCount": 43,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#569cd6": 10,
+        "#79c0ff": 4,
+        "#8b949e": 66,
+        "#a5d6ff": 126,
+        "#b5cea8": 6,
+        "#bbbebf": 74,
+        "#c586c0": 16,
+        "#c9d1d9": 178,
+        "#d2a8ff": 16,
+        "#d4d4d4": 34,
+        "#dcdcaa": 155,
+        "#ff7b72": 63,
+        "#ffa657": 9
+      }
+    },
+    {
+      "file": "Dockerfile",
+      "language": "dockerfile",
+      "sha256": "064d62b3ee5205f79a007c5114936e2b09b9f9c17daddb17ac214ac5bb35e05d",
+      "mode": "semantic-enabled",
+      "lineCount": 18,
+      "semanticProvider": {
+        "available": false,
+        "tokenCount": 0,
+        "tokenTypes": []
+      },
+      "colors": {
+        "#8b949e": 65,
+        "#a5d6ff": 79,
+        "#bbbebf": 192,
+        "#ff7b72": 41
+      }
+    }
+  ]
+}

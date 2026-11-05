@@ -1,0 +1,45 @@
+/* Compare selectors, custom properties, units, functions, and at-rules. */
+@layer base, components;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --canvas: #121314;
+    --text: #bfbfbf;
+    --accent: #297aa0;
+    --spacing: 1rem;
+  }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--text);
+    font: 400 1rem/1.5 system-ui, sans-serif;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+}
+
+@layer components {
+  .theme-card[data-theme="dark"] {
+    display: grid;
+    gap: calc(var(--spacing) / 2);
+    max-width: 40rem;
+    margin: 2rem auto;
+    padding: clamp(1rem, 4vw, 3rem);
+    border: 1px solid rgb(191 191 191 / 25%);
+    border-radius: 8px;
+  }
+
+  button:not(:disabled):hover,
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  button { transition: outline-offset 150ms ease-in-out; }
+}

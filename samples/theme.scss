@@ -1,0 +1,43 @@
+@use "sass:color";
+
+// Compare variables, mixins, interpolation, maps, and nested selectors.
+$canvas: #121314;
+$foreground: #bfbfbf;
+$accent: #297aa0;
+$spacing: 1rem;
+$roles: (
+  "background": $canvas,
+  "foreground": $foreground,
+  "accent": $accent
+);
+
+@mixin focus-ring($color, $width: 2px) {
+  outline: $width solid $color;
+  outline-offset: 3px;
+}
+
+@function hover-color($base) {
+  @return color.adjust($base, $lightness: 8%);
+}
+
+.theme-card {
+  padding: $spacing * 2;
+  color: $foreground;
+  background: $canvas;
+
+  &__title {
+    margin-block: 0 $spacing;
+    font-weight: 600;
+  }
+
+  button {
+    background: $accent;
+
+    &:hover { background: hover-color($accent); }
+    &:focus-visible { @include focus-ring($accent); }
+  }
+}
+
+@each $role, $value in $roles {
+  .swatch--#{$role} { border-color: $value; }
+}

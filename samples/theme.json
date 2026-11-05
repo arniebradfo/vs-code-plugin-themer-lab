@@ -1,0 +1,26 @@
+{
+  "name": "Themer Lab",
+  "version": 1,
+  "enabled": true,
+  "description": "UI and syntax are separate palettes.\nInspect escapes and punctuation.",
+  "ui": {
+    "background": "#121314",
+    "foreground": "#bfbfbf",
+    "accent": "#297aa0"
+  },
+  "syntaxRoles": [
+    "comment",
+    "keyword",
+    "string",
+    "number",
+    "type",
+    "function",
+    "property"
+  ],
+  "contrastTargets": [3, 4.5, 7.0],
+  "optionalOverride": null,
+  "preview": {
+    "live": false,
+    "sampleCount": 24
+  }
+}

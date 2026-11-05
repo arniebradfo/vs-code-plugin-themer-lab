@@ -1,0 +1,47 @@
+name: Publish to Marketplace
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: marketplace-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    environment: marketplace
+    permissions:
+      contents: read
+    steps:
+      - name: Require main
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -ne 'refs/heads/main') {
+            throw 'Marketplace publication must use main.'
+          }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Reject unfinished publisher and license setup
+        run: npm run check:release
+      - run: npm run check
+      - run: npm run package
+      - name: Publish reviewed package
+        shell: pwsh
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:VSCE_PAT)) {
+            throw 'Configure VSCE_PAT in the protected marketplace environment.'
+          }
+          $version = (Get-Content -LiteralPath package.json -Raw | ConvertFrom-Json).version
+          $package = "artifacts\themer-lab-$version.vsix"
+          & .\node_modules\.bin\vsce.cmd publish --packagePath $package
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

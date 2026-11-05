@@ -1,0 +1,16 @@
+node_modules/
+dist/
+out/
+artifacts/
+.vscode-test/
+.vscode/settings.json
+*.vsix
+*.log
+USER-NOTES.md
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.p12
+.vsce
