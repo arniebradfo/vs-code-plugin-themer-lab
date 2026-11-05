@@ -13,7 +13,7 @@ earlier local development history is not part of this repository.
 - Windows/Linux CI for type checking, unit tests, and builds, with a runtime
   dependency advisory check on Linux.
 - Installable review VSIX artifacts from successful Windows CI.
-- Manual, environment-gated Marketplace publishing with a protected secret.
+- Manual, environment-gated Marketplace publishing with OIDC authentication.
 - A release prerequisite check that rejects local publisher and license placeholders.
 - Bug/feature forms, private security reporting, and dependency-update configuration.
 
@@ -60,30 +60,15 @@ both installed: both contribute the same commands and theme names.
 - Check automatic OS light/dark theme switching and multi-window User settings.
 - Complete the applicable [product review gates](../../PLAN.md).
 
-## Configure publishing authentication
+## Configure secretless publishing
 
 The workflow is manual. It does not publish on pushes, tags, or dependency PRs.
 
-The installed stable `@vscode/vsce` 3.9.2 supports `VSCE_PAT`, but does not yet
-provide the `--oidc` option described in the newest official guidance. Do not
-copy that option into the workflow until a released CLI supports it.
+The original snapshot used VSCE 3.9.2, whose CLI did not expose `--oidc`.
+The publishing-tooling update uses the stable VSCE 4.1 release, which supports
+the current Marketplace exchange and exposes the option in CLI help.
+The release tests check that capability. Node.js 22 remains supported.
 
-For the current workflow:
-
-1. In Azure DevOps, create a short-lived token with only the required
-   **Marketplace: Manage** scope for the chosen publisher. This is not a GitHub
-   access token. Follow the
-   [official publishing instructions](https://code.visualstudio.com/api/working-with-extensions/publishing-extension).
-2. Save it as the `VSCE_PAT` secret in the GitHub **marketplace environment**,
-   not in source, a local settings file, an issue, or chat.
-3. Keep owner approval and the `main` deployment restriction on that environment.
-   The workflow exposes the secret only to its final publishing step.
-4. Revoke or rotate the token after use and before its expiration.
-
-### Prefer Trusted Publishing when supported
-
-When the stable CLI provides `--oidc`, replace the token-based step with OIDC,
-grant `id-token: write` only to the publishing job, and remove `VSCE_PAT`.
 In the Marketplace publisher's **Trusted Publishing** page, create a policy:
 
 | Field | Value |
@@ -93,9 +78,10 @@ In the Marketplace publisher's **Trusted Publishing** page, create a policy:
 | Workflow | `publish.yml` |
 | Environment | `marketplace` |
 
-Use the exact case and names. Verify the upgraded CLI option and policy before
-switching. This setup requests a short-lived OIDC credential with
-`vsce publish --oidc`, without a stored PAT.
+Use the exact case and names. The publishing job alone has `id-token: write`.
+It requests a short-lived OIDC credential with `vsce publish --oidc`, without
+a stored PAT. Do not add a publishing token to source, settings, an issue, or
+chat. Remove and revoke any old `VSCE_PAT` credential after switching.
 
 Review the GitHub `marketplace` environment's deployment protection. Require
 owner approval and restrict deployments to `main`. Only approve a deployment
