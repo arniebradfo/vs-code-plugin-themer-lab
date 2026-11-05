@@ -5,7 +5,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 concurrency:
   group: marketplace-publish
@@ -17,6 +16,7 @@ jobs:
     environment: marketplace
     permissions:
       contents: read
+      id-token: write
     steps:
       - name: Require main
         shell: pwsh

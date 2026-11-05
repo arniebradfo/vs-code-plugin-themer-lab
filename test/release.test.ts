@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { test } from "node:test";
 import { releaseBlockers } from "../tools/check-release";
@@ -9,6 +10,12 @@ test("the installed publishing CLI supports the configured OIDC command", () => 
   const help = execFileSync(process.execPath, [cli, "publish", "--help"], { encoding: "utf8" });
   assert.match(help, /--oidc\b/);
   assert.match(help, /--packagePath\b/);
+});
+
+test("OIDC permission belongs to the protected publishing job, not workflow defaults", async () => {
+  const workflow = await readFile(path.resolve(__dirname, "..", ".github", "workflows", "publish.yml"), "utf8");
+  assert.doesNotMatch(workflow, /^  id-token:/m);
+  assert.match(workflow, /^    environment: marketplace\r?\n    permissions:\r?\n      contents: read\r?\n      id-token: write\r?$/m);
 });
 
 test("Marketplace publication rejects the local publisher and unlicensed snapshot", () => {

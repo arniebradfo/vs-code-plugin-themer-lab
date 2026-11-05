@@ -48,9 +48,10 @@ available for isolated development without replacing the installed extension.
 - Manual publishing is environment-gated and refuses the local publisher,
   `UNLICENSED`, or an absent project license. A separate tooling-hardening
   change upgrades VSCE from 3.9.2 to the verified stable 4.1 release, adds an
-  actual CLI capability regression, and switches the workflow to short-lived
-  OIDC credentials. The initial `main` snapshot stays parentless until that
-  follow-up is reviewed. No publishing credential is stored in source.
+  actual CLI capability and job-permission regressions, and switches the
+  workflow to short-lived OIDC credentials. The requested `main` remains a
+  one-commit snapshot while that follow-up is reviewed. No publishing
+  credential is stored in source.
 - The [publishing checklist](../docs/development/publishing.md) covers owner
   decisions, publisher identity changes, protected authentication, artwork,
   compatibility review, and release acceptance. Nothing is published to the
