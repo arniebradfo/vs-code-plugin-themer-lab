@@ -93,10 +93,10 @@
   "devDependencies": {
     "@types/culori": "^4.0.1",
     "@types/node": "^22.15.0",
-    "@types/vscode": "^1.100.0",
+    "@types/vscode": "^1.144.0",
     "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^4.1.0",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.28.2",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"
   }
