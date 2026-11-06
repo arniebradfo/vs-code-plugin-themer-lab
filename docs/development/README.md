@@ -20,6 +20,14 @@ npm run check
 `check` runs strict type checking, the unit tests, and the build. No extension
 is installed and no real editor settings are changed by that command.
 
+Keep Node type definitions aligned with the extension's
+[build target](../../tools/build.mjs). VS Code declarations use a patch-only
+range no newer than the minimum in the [manifest](../../package.json). Not every
+editor release has a matching declaration package. Do not raise the supported
+editor minimum just to accept newer types.
+[Dependabot](../../.github/dependabot.yml) ignores incompatible Node type majors
+and VS Code declaration minor/major updates until those targets are reviewed.
+
 CI runs the same check on Windows and Linux, then packages a Windows review
 VSIX. Download it from a successful
 [CI run](https://github.com/arniebradfo/vs-code-plugin-themer-lab/actions/workflows/ci.yml).
