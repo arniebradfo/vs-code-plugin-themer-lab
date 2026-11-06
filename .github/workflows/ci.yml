@@ -45,13 +45,24 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         shell: pwsh
         run: |
+          $minimum = [Version]((Get-Content -LiteralPath package.json -Raw | ConvertFrom-Json).engines.vscode.Substring(1))
+          $published = (npm view '@types/vscode' versions --json --registry=https://registry.npmjs.org/) -join "`n"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $compatible = @(($published | ConvertFrom-Json) | Where-Object { $_ -match '^\d+\.\d+\.\d+$' -and [Version]$_ -le $minimum } | Sort-Object { [Version]$_ } -Descending)[0]
+          if (!$compatible) {
+            throw 'No published VS Code declarations match the supported editor minimum.'
+          }
+          Write-Output "Caching compatible VS Code declarations: $compatible"
           $directory = Join-Path $env:RUNNER_TEMP 'themer-next-public-tools'
+          if (Test-Path -LiteralPath $directory) {
+            throw 'The temporary tool directory must start empty.'
+          }
           New-Item -ItemType Directory -Path $directory | Out-Null
           Push-Location $directory
           try {
             npm init --yes
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            npm install --ignore-scripts --no-audit --no-fund --registry=https://registry.npmjs.org/ 'esbuild@0.28.2' '@types/vscode@~1.143.0'
+            npm install --ignore-scripts --no-audit --no-fund --registry=https://registry.npmjs.org/ 'esbuild@0.28.2' "@types/vscode@$compatible"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           } finally {
             Pop-Location
