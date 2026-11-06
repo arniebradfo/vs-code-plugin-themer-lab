@@ -27,11 +27,37 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Isolate public npm cache for manual validation
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        run: |
+          $cache = Join-Path $env:RUNNER_TEMP 'themer-pr-public-cache'
+          if (Test-Path -LiteralPath $cache) {
+            throw 'The validation cache must start empty.'
+          }
+          "npm_config_cache=$cache" | Out-File -LiteralPath $env:GITHUB_ENV -Append -Encoding utf8
       - run: npm ci
       - name: Check runtime dependency advisories
         if: runner.os == 'Linux'
         run: npm audit --omit=dev --audit-level=high
       - run: npm run check
+      - name: Cache the reviewed next public tool versions
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        run: |
+          $directory = Join-Path $env:RUNNER_TEMP 'themer-next-public-tools'
+          New-Item -ItemType Directory -Path $directory | Out-Null
+          Push-Location $directory
+          try {
+            npm init --yes
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            npm install --ignore-scripts --no-audit --no-fund --registry=https://registry.npmjs.org/ 'esbuild@0.28.2' '@types/vscode@~1.143.0'
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } finally {
+            Pop-Location
+          }
+          node -e "const fs=require('node:fs');for(const file of process.argv.slice(1)){const lock=JSON.parse(fs.readFileSync(file,'utf8'));for(const entry of Object.values(lock.packages)){if(entry.resolved&&!entry.resolved.startsWith('https://registry.npmjs.org/'))throw new Error('Only public registry packages may be transferred.');}}" package-lock.json (Join-Path $directory 'package-lock.json')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Package review VSIX
         if: runner.os == 'Windows'
         run: npm run package
@@ -43,3 +69,11 @@ jobs:
           path: artifacts\*.vsix
           if-no-files-found: error
           retention-days: 14
+      - name: Transfer the fresh public dependency cache for local validation
+        if: github.event_name == 'workflow_dispatch' && runner.os == 'Windows'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: public-npm-validation-${{ github.run_number }}
+          path: ${{ runner.temp }}\themer-pr-public-cache\_cacache
+          if-no-files-found: error
+          retention-days: 1
