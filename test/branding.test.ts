@@ -49,6 +49,27 @@ test("the public lockfile resolves dependencies only from the public npm registr
   }
 });
 
+test("API type declarations stay within the supported extension targets", async () => {
+  const root = path.resolve(__dirname, "..");
+  const manifest = requireRecord(JSON.parse(await readFile(path.join(root, "package.json"), "utf8")), "Manifest");
+  const engines = requireRecord(manifest.engines, "Engines");
+  const dependencies = requireRecord(manifest.devDependencies, "Development dependencies");
+  assert.ok(typeof engines.vscode === "string");
+  assert.ok(typeof dependencies["@types/vscode"] === "string");
+  const editor = /^\^(\d+)\.(\d+)\.(\d+)$/.exec(engines.vscode);
+  const declarations = /^~(\d+)\.(\d+)\.(\d+)$/.exec(dependencies["@types/vscode"]);
+  assert.ok(editor && declarations, "Pin VS Code declarations to a compatible minor release.");
+  assert.equal(declarations[1], editor[1]);
+  assert.ok(Number(declarations[2]) < Number(editor[2]) ||
+    (declarations[2] === editor[2] && Number(declarations[3]) <= Number(editor[3])),
+  "Do not compile against APIs newer than the minimum supported editor.");
+  const build = await readFile(path.join(root, "tools", "build.mjs"), "utf8");
+  const nodeTarget = /target: "node(\d+)"/.exec(build);
+  assert.ok(nodeTarget?.[1], "The extension build must declare its Node target.");
+  assert.ok(typeof dependencies["@types/node"] === "string");
+  assert.match(dependencies["@types/node"], new RegExp(`^(?:\\^|~)?${nodeTarget[1]}\\.\\d+\\.\\d+$`));
+});
+
 test("both native theme contributions, packaged JSON and capture output use the final names", async () => {
   const root = path.resolve(__dirname, "..");
   const manifest = requireRecord(JSON.parse(await readFile(path.join(root, "package.json"), "utf8")), "Manifest");
