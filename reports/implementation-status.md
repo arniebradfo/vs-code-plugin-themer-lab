@@ -1,4 +1,4 @@
-# Implementation checkpoint: 2026-10-25
+# Implementation checkpoints
 
 ## Outcome
 
@@ -28,7 +28,34 @@ Review builds are now rebuilt and force-installed at the user's request.
 The user closes the Themer panel and reloads the window manually. F5 remains
 available for isolated development without replacing the installed extension.
 
-## Current checkpoint: public source and release preparation
+## Current checkpoint: reviewed dependency updates (2026-11-06)
+
+- The owner requested evaluation and merging of the open update PRs. Reviewed
+  upgrades cover VSCE 4.1 with job-scoped OIDC publishing, the supported
+  identity 4.14.1/MSAL 7.2.0 pair, test-electron 3.1, and esbuild 0.28.2.
+  Earlier private development history remains excluded from the public repo.
+- Node 22 and the VS Code 1.143.0 minimum are unchanged. The grouped update's
+  incompatible VS Code 1.144 declarations are replaced with a patch-only
+  1.140 range, the highest published compatible declarations. Node 26 types
+  are declined. A regression and Dependabot filters enforce the host targets
+  instead of suppressing type errors or raising the editor minimum.
+- The obsolete markdown-it and fast-uri patches are superseded by removing
+  those dependencies through VSCE 4.1, not by reintroducing old lockfile state.
+- All 362 unit tests, type checking, build, and packaging pass. The final
+  bundles pass 28 standard and four empty-window native host groups, plus all
+  56 native UI groups. The 42-entry VSIX matches the built runtime, notices,
+  and theme payloads and retains source/test/report/map/personal-note exclusions.
+- Color generation and stored syntax evidence are unchanged. The full syntax
+  corpus was not recaptured because its freshness guards pass. Temporary
+  read-only CI cache-transfer hooks were removed after restoring exact public
+  dependencies with lockfile integrity checks; TLS checks were not disabled.
+- One medium development-only minimatch advisory remains. Its patched 11.0.1
+  release is outside VSCE's supported 10.x range; no major override is forced.
+  The release advisory issue remains open for upstream remediation or triage.
+- No Marketplace upload, publisher/license decision, normal extension
+  reinstall, window reload, or normal-profile theme change was performed.
+
+## Previous checkpoint: public source and release preparation
 
 - The public repository is `arniebradfo/vs-code-plugin-themer-lab`, with `main`
   prepared as a single parentless snapshot. Earlier local development history
