@@ -185,10 +185,10 @@ tests, fixtures, and reports remain excluded from the runtime package.
 Follow the [publishing checklist](publishing.md). CI does not publish.
 The separate Marketplace workflow runs only on manual dispatch, uses the
 `marketplace` environment, and rejects the placeholder publisher or missing
-license. It needs a publisher-side Trusted Publishing policy before it can
-authenticate with OIDC in a future tooling update. The current stable CLI uses
-an environment-scoped publishing secret instead; see the checklist. No
-publishing token is stored in source.
+license. It uses VSCE 4.1 or later and needs a publisher-side Trusted Publishing
+policy before it can authenticate with OIDC. The unit tests verify that the
+installed CLI exposes the required option. No publishing token is stored in
+source or needed as a GitHub secret.
 
 `npm run package` still permits an unlicensed local review build. That is not
 release approval or a license grant. `npm run check:release` intentionally
