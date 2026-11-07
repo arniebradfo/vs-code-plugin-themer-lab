@@ -40,12 +40,25 @@ the editor under `.vscode-test\acceptance-editors` and appends the verified
 The existing developer runners still require an executable and never download
 one by default.
 
-The jobs set `TMPDIR`, `TEMP`, and `TMP` to workspace-local
-`.vscode-test\acceptance-scratch`. The existing runners create and remove
-dedicated profiles, empty extensions directories, and scratch workspaces there.
+Windows archives can store resources under a ten-character commit directory,
+not beside `Code.exe`. Preparation finds one resources directory inside the
+archive, then applies the same exact version, stable quality, and source checks.
+Missing, ambiguous, or external resources fail; the exported executable remains
+the archive's `Code.exe` launcher. macOS resources stay inside their app bundle.
+
+The jobs set `TMPDIR`, `TEMP`, and `TMP` to `GITHUB_WORKSPACE` itself.
+The runners create and remove private `th-<random>` or `ts-<random>` directories
+with a short `p` profile directory. Empty extensions directories and scratch
+workspaces remain separate from the checkout's settings.
 They do not read or modify a normal editor profile. Native debugging remains
 loopback-only. This workflow does not change trust declarations, extension
 placement, remote behavior, publisher, or license.
+
+Do not add a nested scratch directory without checking Unix socket path lengths.
+macOS main-process sockets include the profile path. The JavaScript debugger's
+`node-cdp` sockets include `TMPDIR` directly. macOS allows 103 path bytes; Linux
+allows 107. Regression tests check both layouts against the hosted checkout paths.
+Only console logs are uploaded, never workspace-root caches or private profiles.
 
 ## Commands and checks
 
@@ -80,8 +93,11 @@ npm run test:syntax -- --ui-colors-only --mode=light
 `--mode` selects the starting theme. The existing focused UI host then checks
 **both** modes, including classic/modern workbench paint, controls, and Apply
 targets. Each job requires exit code zero and PASS evidence for both modes.
+Setup explicitly selects the requested native theme in the private profile,
+waits for its theme kind, and checks the pinned foreground/background colors
+before taking the Cancel baseline. The exact restoration assertion is unchanged.
 This is focused native UI acceptance, not a new full syntax or bracket capture.
-Fixtures, sample bytes, and runtime code stay unchanged.
+Fixtures, sample bytes, and extension/webview runtime code stay unchanged.
 
 The matrix uses `ubuntu-24.04`, `windows-2022`, and `macos-15`. Linux wraps each
 desktop test command with:
@@ -103,20 +119,56 @@ test console logs are included. Profiles, settings, workspaces, screenshots,
 environment files, credentials, and crash dumps are not uploaded. Download
 and review the failed job's logs before deciding whether to retry.
 
-Hosted desktop acceptance has not been established merely by adding this
-workflow. The release owner must run it and review every OS/job result. In
-particular, hosted macOS GUI/focus behavior and Linux Xvfb paint need real runs.
+## First hosted run and CI diagnosis
 
-Implementation validation on Windows used the existing local VS Code
+Manual [run 42423623820](https://github.com/arniebradfo/vs-code-plugin-themer-lab/actions/runs/42423623820)
+tested main commit `2e048c2a08ab510e20d6ecc412e85a2a103a7edb`.
+Only the Linux minimum-editor host job passed. The other eight jobs failed:
+
+| Failed jobs | Cause | Automation fix |
+| --- | --- | --- |
+| Windows host `128557121805`; native Light `128557121862`, Dark `128557122458` | Preparation assumed `resources\app` beside `Code.exe`. The official archives instead use `2d0b7506a3` for 1.143.0 and `e646868227` for 1.143.1. No host/UI test ran. | Resolve the unique versioned resources directory without changing the launcher or version/source guards. |
+| macOS host `128557121782`; native Light `128557121714`, Dark `128557121799` | Main IPC socket paths were 144/146 bytes. `listen EINVAL` stopped startup before acceptance assertions. | Use the checkout root for scratch and short private profile paths. |
+| Linux native Light `128557121773`, Dark `128557121832` | A 131-byte `node-cdp` socket failed when the native test started its JavaScript debug session. The refused test dialog was a consequence of that failure. | Shorten `TMPDIR` itself; retain the debug-state test. Xvfb and the earlier Dark UI checks already ran. |
+
+These are automation failures, not evidence of unavailable or changed pinned
+themes. All four Linux/macOS native preparation steps verified both source
+chains. Local inspection of the exact official Windows archives also confirmed
+their versions and stable quality; repaired preparation verified both native
+source chains on 1.143.1. No fixture or tolerance was changed.
+
+The first implementation check on Windows used the existing local VS Code
 **1.145.2**, with workspace-local isolated profiles. All 28 standard host
 groups and all 4 empty-window groups passed with exit code zero. The console
 also reported nonfatal “mutex already exists” messages and missing log-file
 errors. These messages were not suppressed.
 
 That editor's `2026-dark.json` and `2026-light.json` source hashes differ from
-the pinned captures. No local native UI acceptance is claimed, and no editor
-was downloaded locally. Helper tests use a fake download API; they are not
-evidence that the hosted editor download or GUI matrix works.
+the pinned captures. That initial check did not establish native UI acceptance.
+The CI diagnosis downloaded only the exact official 1.143.0 and 1.143.1 archives
+into the isolated worktree cache after checking official version metadata.
+
+The local Light-startup check exposed a separate setup issue: its original
+snapshot contained Dark paint, while Cancel restored the configured Light theme.
+Explicit native-theme selection and baseline color checks fixed that mismatch
+without changing the restoration assertion, application code, or fixture data.
+
+Follow-up validation passed strict type checking, all 20 related unit tests,
+the build, actionlint, and parsing of all 11 workflow PowerShell steps.
+The official Windows 1.143.0 editor passed all 28 standard host groups and
+all 4 empty-window groups. On official 1.143.1, both Dark-startup and
+Light-startup focused UI runs passed all 56 groups and covered both modes.
+
+Local native logs also reported Markdown preview SVG load warnings. The files
+exist, but their paths in this deeply nested Windows worktree are 266/267
+characters. These warnings were nonfatal and were not suppressed. The owner
+must review hosted logs rather than treating local warnings as missing pinned
+theme-source evidence.
+
+The release owner must rerun the repaired workflow and review every OS/job
+result. Local Windows checks and unit tests do not establish hosted macOS
+GUI/focus behavior or Linux native acceptance. Blocker #6 remains open until
+the required real desktop jobs pass on the reviewed commit.
 
 These owner acceptance gaps remain unverified:
 

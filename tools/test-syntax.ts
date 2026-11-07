@@ -60,8 +60,9 @@ async function main(): Promise<void> {
     target: "node22",
     external: ["vscode"]
   });
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "themer-syntax-"));
-  const profile = path.join(temporary, "profile");
+  // Keep macOS main-process IPC sockets within their 103-byte path limit.
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "ts-"));
+  const profile = path.join(temporary, "p");
   const workspace = path.join(temporary, "workspace");
   const extensions = path.join(temporary, "extensions");
   try {
