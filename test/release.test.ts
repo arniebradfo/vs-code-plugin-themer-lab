@@ -30,6 +30,8 @@ test("publishing defaults to review, reuses immutable candidates, and does not r
   assert.match(workflow, /MARKETPLACE_PUBLISH_ENABLED: \$\{\{ vars\.MARKETPLACE_PUBLISH_ENABLED \|\| 'false' \}\}/);
   assert.match(workflow, /retention-days: 90/);
   assert.match(workflow, /digest-mismatch: error/);
+  assert.match(workflow, /^  verify:\r?$/m);
+  assert.match(workflow, /needs\.verify\.result == 'success'/);
   assert.match(workflow, /npm audit --audit-level=moderate/);
   const writeJobs = workflow.split(/^  publish:\r?$/m)[1];
   assert.ok(writeJobs);

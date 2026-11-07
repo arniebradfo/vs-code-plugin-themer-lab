@@ -152,6 +152,8 @@ The workflow:
    - `release-manifest.json`
    - `release-notes.md`
    - `SHA256SUMS.txt`
+7. Downloads that artifact by ID and verifies the retained bytes. Read-only
+   retries use the same check without rebuilding or uploading another package.
 
 Review mode does not request a Marketplace credential, upload to Marketplace,
 create a tag, or create a GitHub release. Its local-license packaging bypass
