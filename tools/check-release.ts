@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { requireRecord } from "../src/shared/validation";
+import { getReleaseMetadata } from "./release";
 
 export function releaseBlockers(manifest: Record<string, unknown>, licenseFilePresent: boolean): string[] {
   const blockers: string[] = [];
@@ -17,14 +18,24 @@ export function releaseBlockers(manifest: Record<string, unknown>, licenseFilePr
   return blockers;
 }
 
-async function main(): Promise<void> {
-  const root = path.resolve(__dirname, "..");
+export async function assertReleaseReady(root: string): Promise<void> {
   const manifest = requireRecord(JSON.parse(await readFile(path.join(root, "package.json"), "utf8")), "Manifest");
-  const blockers = releaseBlockers(manifest, existsSync(path.join(root, "LICENSE")));
+  const licensePath = path.join(root, "LICENSE");
+  const licensePresent = existsSync(licensePath) && (await readFile(licensePath, "utf8")).trim().length > 0;
+  const blockers = releaseBlockers(manifest, licensePresent);
   if (blockers.length > 0) {
     throw new Error(`Marketplace publication is blocked:\n${blockers.map((blocker) => `- ${blocker}`).join("\n")}`);
   }
-  console.log("Publisher and license prerequisites are present. Complete the documented release review before publishing.");
+  const [lock, changelog] = await Promise.all([
+    readFile(path.join(root, "package-lock.json"), "utf8"),
+    readFile(path.join(root, "CHANGELOG.md"), "utf8")
+  ]);
+  getReleaseMetadata(manifest, JSON.parse(lock), changelog);
+}
+
+async function main(): Promise<void> {
+  await assertReleaseReady(path.resolve(__dirname, ".."));
+  console.log("Publisher, license, version, lockfile, and release notes are present. Owner acceptance is still required.");
 }
 
 if (require.main === module) {

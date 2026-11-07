@@ -31,6 +31,9 @@ jobs:
       - name: Check runtime dependency advisories
         if: runner.os == 'Linux'
         run: npm audit --omit=dev --audit-level=high
+      - name: Record full tooling audit and reject high-severity advisories
+        if: runner.os == 'Linux'
+        run: npm audit --audit-level=high
       - run: npm run check
       - name: Package review VSIX
         if: runner.os == 'Windows'

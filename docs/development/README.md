@@ -41,8 +41,8 @@ editor minimum just to accept newer types.
 [Dependabot](../../.github/dependabot.yml) ignores incompatible Node type majors
 and VS Code declaration minor/major updates until those targets are reviewed.
 
-CI runs the same check on Windows and Linux, then packages a Windows review
-VSIX. Download it from a successful
+CI runs the same check on Windows and Linux, records the full tooling audit,
+rejects high advisories, and packages a Windows review VSIX. Download it from a successful
 [CI run](https://github.com/arniebradfo/vs-code-plugin-themer-lab/actions/workflows/ci.yml).
 These artifacts are experimental builds, not Marketplace releases.
 
@@ -69,6 +69,14 @@ normal user settings or this repository as the preview workspace.
 - [Legacy theme-name migration](reference.md#upgrading-older-theme-names)
 - [Scope, milestones, and review gates](../../PLAN.md)
 - [Implementation checkpoints](../../reports/implementation-status.md)
+- [Release PRs, review candidates, publishing, and safe retries](publishing.md)
+- [Isolated native release acceptance](acceptance.md)
+
+The [publishing workflow](../../.github/workflows/publish.yml) defaults to
+review mode and requires explicit owner enablement before publication. Its
+review artifacts bind the actual VSIX to a source commit, checksum, file
+inventory, and release notes. Release PR preparation and native acceptance have
+separate workflows; neither deploys to Marketplace.
 
 The technical reference preserves the detailed material that previously lived
 in the root README. Source, fixtures, and reports are repository resources and
