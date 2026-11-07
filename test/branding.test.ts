@@ -70,6 +70,19 @@ test("API type declarations stay within the supported extension targets", async 
   assert.match(dependencies["@types/node"], new RegExp(`^(?:\\^|~)?${nodeTarget[1]}\\.\\d+\\.\\d+$`));
 });
 
+test("compiler configuration preserves modern bundler resolution and strict checking", async () => {
+  const config = requireRecord(JSON.parse(await readFile(path.resolve(__dirname, "..", "tsconfig.json"), "utf8")), "Compiler configuration");
+  const options = requireRecord(config.compilerOptions, "Compiler options");
+  assert.equal(options.module, "Preserve");
+  assert.equal(options.moduleResolution, "Bundler");
+  assert.equal(options.rootDir, ".");
+  assert.equal(options.target, "ES2022");
+  assert.equal(options.strict, true);
+  assert.equal(options.noUncheckedIndexedAccess, true);
+  assert.deepEqual(options.types, ["node", "vscode"]);
+  assert.equal(options.ignoreDeprecations, undefined);
+});
+
 test("both native theme contributions, packaged JSON and capture output use the final names", async () => {
   const root = path.resolve(__dirname, "..");
   const manifest = requireRecord(JSON.parse(await readFile(path.join(root, "package.json"), "utf8")), "Manifest");

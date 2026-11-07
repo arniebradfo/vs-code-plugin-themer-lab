@@ -28,7 +28,33 @@ Review builds are now rebuilt and force-installed at the user's request.
 The user closes the Themer panel and reloads the window manually. F5 remains
 available for isolated development without replacing the installed extension.
 
-## Current checkpoint: reviewed dependency updates (2026-11-06)
+## Current checkpoint: TypeScript 7 migration (2026-11-07)
+
+- The compiler migration uses a new branch and PR, with validated 5.9.3,
+  6.0.3, and 7.0.2 checkpoints. TypeScript 7 replaces the removed legacy Node
+  resolver with `Preserve`/`Bundler` settings and an explicit repository root.
+- The sample test uses the installed compiler CLI instead of the legacy
+  compiler API, retaining its exact file-set, strictness, no-emit, JavaScript,
+  and no-third-party-types assertions. No compatibility compiler is added.
+- Node 22, the VS Code 1.143.0 minimum, API type limits, strict checking, theme
+  generation, and the actual CommonJS/browser build formats are unchanged.
+  No application-code fixes or type-error suppressions were needed.
+- All 363 unit tests, type checking, build, package inspection, 28 isolated
+  VS Code host groups, and four empty-window groups pass. The primary build's
+  six runtime/theme/notice payloads are byte-identical to the 5.9.3 baseline;
+  copied text resources differ between clean checkouts only in line endings.
+  The old resolver still fails with TS5108 under TypeScript 7, while the
+  migrated configuration passes. Stored native syntax evidence stays current.
+- Full suites run in a separate clean checkout because the open editor
+  repeatedly creates an ignored debug log in the sample catalog. The original
+  log is preserved, and user notes and samples are unchanged.
+- TypeScript's native platform package is included in the public-registry
+  lockfile. Local installation retains lockfile integrity checks and optional
+  dependencies. No TLS checks, release guards, or package exclusions are weakened.
+- Nothing is published to the Marketplace or installed into the normal editor
+  profile by this migration.
+
+## Previous checkpoint: reviewed dependency updates (2026-11-06)
 
 - The owner requested evaluation and merging of the open update PRs. Reviewed
   upgrades cover VSCE 4.1 with job-scoped OIDC publishing, the supported
