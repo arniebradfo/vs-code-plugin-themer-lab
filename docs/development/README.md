@@ -204,7 +204,12 @@ extension manifests, runtime bundles, themes, samples, packaged documentation,
 local README links, and third-party notices. It rejects unsafe or duplicate
 paths, unwanted files, damaged member data, and recognizable credential
 formats. HTTPS README links rewritten by VSCE remain valid, including links
-to a full source commit SHA. If the source has `LICENSE`, the archive must
+to a full source commit SHA. Safe PNG, GIF, and JPEG files under `assets`
+are allowed when referenced by the manifest icon or packaged README, including
+GitHub image links rewritten by VSCE. Their raster signatures are checked;
+SVG image assets, unreferenced images, source files, and maps remain excluded.
+A declared icon must be packaged and linked by the VSIX XML manifest.
+If the source has `LICENSE`, the archive must
 include the same nonempty bytes. Local review builds can still use the
 placeholder publisher without a project license.
 

@@ -9,7 +9,7 @@ import { DefaultTreeAdapterMap, parseFragment } from "parse5";
 import { parseStringPromise } from "xml2js";
 import { fromBufferPromise, getFileNameLowLevel, parseExtraFields } from "yauzl";
 import { editorSamples } from "../src/shared/samples";
-import { requireRecord, requireString } from "../src/shared/validation";
+import { isRecord, requireRecord, requireString } from "../src/shared/validation";
 
 export interface CheckVsixOptions {
   vsix: string;
@@ -33,6 +33,7 @@ const maxArchiveBytes = 128 * 1024 * 1024;
 const maxEntryBytes = 32 * 1024 * 1024;
 const maxExpandedBytes = 128 * 1024 * 1024;
 const maxEntries = 1024;
+const rasterExtensions = new Set([".png", ".gif", ".jpg", ".jpeg"]);
 const developmentDocs = [
   "extension/docs/development/README.md",
   "extension/docs/development/publishing.md",
@@ -54,7 +55,7 @@ function validateOptions(options: CheckVsixOptions): void {
     const value = requireString(options[field], `--${field}`);
     if (!value.trim() || value.includes("\0")) throw new Error(`Invalid --${field}. ${usage}`);
   }
-  if (!/^[a-f0-9]{40}$/i.test(options.commit)) throw new Error(`--commit must be a full 40hex SHA. ${usage}`);
+  if (!/^[a-f0-9]{40}(?![\s\S])/i.test(options.commit)) throw new Error(`--commit must be a full 40hex SHA. ${usage}`);
   if (path.extname(options.vsix).toLowerCase() !== ".vsix") throw new Error(`--vsix must name a .vsix file. ${usage}`);
   if (path.extname(options.output).toLowerCase() !== ".json") throw new Error(`--output must name a .json file. ${usage}`);
 }
@@ -81,17 +82,17 @@ export function parseCheckVsixArgs(args: readonly string[]): CheckVsixOptions {
 }
 
 function validateZipPath(name: string): void {
-  const segments = name.replace(/\/$/, "").split("/");
+  const segments = (name.endsWith("/") ? name.slice(0, -1) : name).split("/");
   if (
-    !name || name.startsWith("/") || /[\\:\u0000-\u001f\u007f]/.test(name) ||
+    !name || name.startsWith("/") || /[\\:\u0000-\u001f\u007f\u2028\u2029]/.test(name) ||
     segments.some((segment) => !segment || segment === "." || segment === ".." || segment.endsWith(".") || segment.trim() !== segment)
   ) {
     throw new Error(`Unsafe VSIX ZIP path: ${JSON.stringify(name)}.`);
   }
   if (
     segments.some((segment) => blockedDirectories.has(segment.toLowerCase())) ||
-    /(?:^|\/)(?:user[-_]?notes\.md|\.env(?:\.[^/]*)?|\.npmrc|\.vsce)$/i.test(name) ||
-    /\.(?:map|log|pem|key|pfx|p12)$/i.test(name)
+    /(?:^|\/)(?:user[-_]?notes\.md|\.env(?:\.[^/]*)?|\.npmrc|\.vsce)(?![\s\S])/i.test(name) ||
+    /\.(?:map|log|pem|key|pfx|p12)(?![\s\S])/i.test(name)
   ) {
     throw new Error(`Disallowed VSIX entry: ${name}.`);
   }
@@ -102,6 +103,18 @@ function extensionPath(value: unknown, label: string): string {
   const name = `extension/${relative}`;
   validateZipPath(name);
   return name;
+}
+
+function isRasterAsset(name: string): boolean {
+  return name.startsWith("extension/assets/") && rasterExtensions.has(path.posix.extname(name).toLowerCase());
+}
+
+function validateRasterAsset(name: string, content: Buffer): void {
+  const extension = path.posix.extname(name).toLowerCase();
+  const png = extension === ".png" && content.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  const gif = extension === ".gif" && ["GIF87a", "GIF89a"].includes(content.subarray(0, 6).toString("ascii"));
+  const jpeg = (extension === ".jpg" || extension === ".jpeg") && content[0] === 0xff && content[1] === 0xd8 && content[2] === 0xff;
+  if (!png && !gif && !jpeg) throw new Error(`Invalid raster image signature in VSIX asset: ${name}.`);
 }
 
 function requiredFile(files: Map<string, Buffer>, name: string): Buffer {
@@ -123,7 +136,7 @@ async function xmlDocument(content: Buffer, label: string): Promise<Record<strin
   return requireRecord(parsed, label);
 }
 
-async function validateXml(files: Map<string, Buffer>, expected: Record<string, unknown>, readme: string): Promise<void> {
+async function validateXml(files: Map<string, Buffer>, expected: Record<string, unknown>, readme: string, icon: string | undefined): Promise<void> {
   const document = await xmlDocument(requiredFile(files, "extension.vsixmanifest"), "VSIX XML manifest");
   const manifest = requireRecord(document.PackageManifest, "PackageManifest");
   const manifestAttributes = requireRecord(manifest.$, "PackageManifest attributes");
@@ -153,6 +166,9 @@ async function validateXml(files: Map<string, Buffer>, expected: Record<string, 
   if (assetPaths.get("Microsoft.VisualStudio.Services.Content.Details") !== readme) {
     throw new Error("VSIX XML README asset does not point to the packaged README.");
   }
+  if (assetPaths.get("Microsoft.VisualStudio.Services.Icons.Default") !== icon) {
+    throw new Error("VSIX XML icon asset does not point to the declared packaged icon.");
+  }
   const contentTypes = await xmlDocument(requiredFile(files, "[Content_Types].xml"), "VSIX content types");
   const types = requireRecord(contentTypes.Types, "VSIX content Types");
   if (requireRecord(types.$, "VSIX content Types attributes").xmlns !== "http://schemas.openxmlformats.org/package/2006/content-types") {
@@ -160,10 +176,17 @@ async function validateXml(files: Map<string, Buffer>, expected: Record<string, 
   }
 }
 
-function htmlLinks(node: DefaultTreeAdapterMap["node"], destinations: string[]): void {
+interface ReadmeLink {
+  destination: string;
+  image: boolean;
+}
+
+function htmlLinks(node: DefaultTreeAdapterMap["node"], destinations: ReadmeLink[]): void {
   if ("attrs" in node) {
     for (const attribute of node.attrs) {
-      if (attribute.name === "href" || attribute.name === "src") destinations.push(attribute.value);
+      if (attribute.name === "href" || attribute.name === "src") {
+        destinations.push({ destination: attribute.value, image: node.tagName === "img" && attribute.name === "src" });
+      }
     }
   }
   if ("childNodes" in node) {
@@ -171,45 +194,87 @@ function htmlLinks(node: DefaultTreeAdapterMap["node"], destinations: string[]):
   }
 }
 
-function validateReadme(content: Buffer, files: Map<string, Buffer>): void {
-  const destinations: string[] = [];
+function rewrittenAssetPath(destination: string, expected: Record<string, unknown>): string | undefined {
+  const repository = typeof expected.repository === "string" ? expected.repository : isRecord(expected.repository) ? expected.repository.url : undefined;
+  if (typeof repository !== "string" || !/^(?:git\+)?https:\/\//i.test(repository)) return undefined;
+  if (/[\u0000-\u0020\u007f]/.test(repository)) throw new Error("Invalid source repository URL.");
+  const source = new URL(repository.replace(/^git\+/i, ""));
+  if (source.hostname !== "github.com") return undefined;
+  const repositoryPath = source.pathname.endsWith(".git") ? source.pathname.slice(0, -4) : source.pathname;
+  const [owner, repo] = repositoryPath.slice(1).split("/");
+  if (!owner || !repo) return undefined;
+  const url = new URL(destination.startsWith("//") ? `https:${destination}` : destination);
+  if (url.protocol !== "https:") return undefined;
+  const segments = url.pathname.slice(1).split("/");
+  if (segments[0]?.toLowerCase() !== owner.toLowerCase() || segments[1]?.toLowerCase() !== repo.toLowerCase()) return undefined;
+  let relative: string;
+  if (url.hostname === "raw.githubusercontent.com" && segments[2]) relative = segments.slice(3).join("/");
+  else if (url.hostname === "github.com" && (segments[2] === "raw" || segments[2] === "blob") && segments[3]) relative = segments.slice(4).join("/");
+  else return undefined;
+  relative = decodeURIComponent(relative);
+  if (!relative.startsWith("assets/")) return undefined;
+  return extensionPath(relative, "Rewritten README asset");
+}
+
+function validateReadme(content: Buffer, files: Map<string, Buffer>, expected: Record<string, unknown>): Set<string> {
+  const destinations: ReadmeLink[] = [];
   walkTokens(lexer(content.toString("utf8")), (token) => {
     if (token.type === "link" || token.type === "image") {
       if (typeof token.href !== "string") throw new Error("Invalid packaged README link.");
-      destinations.push(token.href);
+      destinations.push({ destination: token.href, image: token.type === "image" });
     }
     if (token.type === "html") htmlLinks(parseFragment(requireString(token.text, "README HTML")), destinations);
   });
-  for (const destination of destinations) {
-    if (!destination || destination.startsWith("#") || /^(?:https?:\/\/|mailto:|\/\/)/i.test(destination)) continue;
+  const referencedAssets = new Set<string>();
+  for (const { destination, image } of destinations) {
+    if (/[\u0000-\u001f\u007f\u2028\u2029]/.test(destination)) throw new Error("Invalid control character in packaged README link.");
+    if (!destination || destination.startsWith("#")) continue;
+    if (/^(?:https?:\/\/|\/\/)/i.test(destination)) {
+      const url = new URL(destination.startsWith("//") ? `https:${destination}` : destination);
+      if (url.username || url.password) throw new Error("Packaged README URLs must not contain credentials.");
+      if (image && path.posix.extname(decodeURIComponent(url.pathname)).toLowerCase() === ".svg") {
+        throw new Error("SVG Marketplace image assets are not allowed.");
+      }
+      const name = rewrittenAssetPath(destination, expected);
+      if (name && files.has(name)) referencedAssets.add(name);
+      continue;
+    }
+    if (/^mailto:/i.test(destination)) continue;
     const local = decodeURIComponent(destination.split(/[?#]/, 1)[0] ?? "");
-    if (!local || local.startsWith("/") || /[\\:\u0000-\u001f\u007f]/.test(local)) {
+    if (!local || local.startsWith("/") || /[\\:\u0000-\u001f\u007f\u2028\u2029]/.test(local)) {
       throw new Error(`Invalid packaged README local link: ${destination}.`);
     }
     const name = path.posix.normalize(path.posix.join("extension", local));
     if (!name.startsWith("extension/") || !files.has(name)) {
       throw new Error(`Packaged README local link does not resolve: ${destination}.`);
     }
+    if (isRasterAsset(name)) referencedAssets.add(name);
   }
+  return referencedAssets;
 }
 
 export async function checkVsix(options: CheckVsixOptions): Promise<ReleaseManifest> {
   validateOptions(options);
   const root = path.resolve(options.root ?? path.resolve(__dirname, ".."));
   const output = path.resolve(options.output);
-  if (output === path.join(root, "package.json")) throw new Error("--output must not overwrite source package.json.");
-  const expected = requireRecord(JSON.parse(await readFile(path.join(root, "package.json"), "utf8")), "Source package.json");
+  const sourceManifest = path.join(root, "package.json");
+  if (output === sourceManifest || (process.platform === "win32" && output.toLowerCase() === sourceManifest.toLowerCase())) {
+    throw new Error("--output must not overwrite source package.json.");
+  }
+  const expected = requireRecord(JSON.parse(await readFile(sourceManifest, "utf8")), "Source package.json");
   const name = requireString(expected.name, "Source package name");
   const publisher = requireString(expected.publisher, "Source publisher");
   const version = requireString(expected.version, "Source version");
-  if (!/^[a-z0-9][a-z0-9-]*$/i.test(name) || !/^[a-z0-9][a-z0-9-]*$/i.test(publisher)) {
+  if (!/^[a-z0-9][a-z0-9-]*(?![\s\S])/i.test(name) || !/^[a-z0-9][a-z0-9-]*(?![\s\S])/i.test(publisher)) {
     throw new Error("Source extension name and publisher must be valid identifiers.");
   }
-  if (!/^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][A-Za-z0-9-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][A-Za-z0-9-]*))*)?(?:\+[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*)?$/.test(version)) {
+  if (!/^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][A-Za-z0-9-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][A-Za-z0-9-]*))*)?(?:\+[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*)?(?![\s\S])/.test(version)) {
     throw new Error("Source extension version must be a semantic version.");
   }
   const main = extensionPath(expected.main, "Source main");
   if (main !== "extension/dist/extension.cjs") throw new Error("Source main must point to the runtime extension bundle.");
+  const icon = expected.icon === undefined ? undefined : extensionPath(expected.icon, "Source icon");
+  if (icon && !isRasterAsset(icon)) throw new Error("Declared icon must be a PNG, GIF, or JPEG image under assets/.");
   const themes = requireRecord(expected.contributes, "Source contributes").themes;
   if (!Array.isArray(themes) || themes.length === 0) throw new Error("Source package.json must contribute themes.");
   const themePaths = themes.map((value: unknown) => {
@@ -224,6 +289,7 @@ export async function checkVsix(options: CheckVsixOptions): Promise<ReleaseManif
     ...developmentDocs, ...themePaths,
     ...editorSamples.map((sample) => `extension/samples/${sample.file}`), "extension/samples/tsconfig.json"
   ]);
+  if (icon) required.add(icon);
   const allowed = new Set([
     ...required, "extension/readme.md", "extension/changelog.md", "extension/PLAN.md", "extension/SECURITY.md",
     "extension/docs/development/acceptance.md",
@@ -250,11 +316,13 @@ export async function checkVsix(options: CheckVsixOptions): Promise<ReleaseManif
       const rawName = getFileNameLowLevel(entry.generalPurposeBitFlag, entry.fileNameRaw, [], true);
       validateZipPath(rawName);
       if (rawName !== name) throw new Error(`VSIX ZIP filename aliases are not permitted: ${name}.`);
-      const key = name.replace(/\/$/, "").toLowerCase();
+      const directory = name.endsWith("/");
+      const key = (directory ? name.slice(0, -1) : name).toLowerCase();
       if (seen.has(key)) throw new Error(`Duplicate VSIX ZIP entry: ${name}.`);
       seen.add(key);
-      const directory = name.endsWith("/");
-      if (!(directory ? directories.has(`${key}/`) : allowed.has(key))) throw new Error(`Unexpected VSIX file: ${name}.`);
+      if (!(directory ? directories.has(`${key}/`) || name.startsWith("extension/assets/") : allowed.has(key) || isRasterAsset(name))) {
+        throw new Error(`Unexpected VSIX file: ${name}.`);
+      }
       const fileType = (entry.externalFileAttributes >>> 16) & 0o170000;
       if ((fileType !== 0 && fileType !== (directory ? 0o040000 : 0o100000)) || (!directory && (entry.externalFileAttributes & 0x10) !== 0)) {
         throw new Error(`VSIX must not contain symlinks or special files: ${name}.`);
@@ -299,6 +367,7 @@ export async function checkVsix(options: CheckVsixOptions): Promise<ReleaseManif
       if (bytes !== entry.uncompressedSize || checksum !== entry.crc32) throw new Error(`VSIX ZIP size or CRC-32 mismatch: ${name}.`);
       const content = Buffer.concat(chunks);
       if (secretPatterns.some((pattern) => pattern.test(content.toString("utf8")))) throw new Error(`Secret-like content in VSIX file: ${name}.`);
+      if (isRasterAsset(name)) validateRasterAsset(name, content);
       files.set(name, content);
     }
   } finally {
@@ -309,7 +378,7 @@ export async function checkVsix(options: CheckVsixOptions): Promise<ReleaseManif
   if (!readme) throw new Error("Missing required VSIX file: extension/readme.md.");
   requiredFile(files, readme);
   const packaged = requireRecord(JSON.parse(requiredFile(files, "extension/package.json").toString("utf8")), "Packaged package.json");
-  for (const field of ["name", "publisher", "version", "main", "license"] as const) {
+  for (const field of ["name", "publisher", "version", "main", "license", "icon"] as const) {
     if (packaged[field] !== expected[field]) throw new Error(`Packaged package.json ${field} does not match source package.json.`);
   }
   if (requireRecord(packaged.engines, "Packaged engines").vscode !== requireRecord(expected.engines, "Source engines").vscode) {
@@ -341,8 +410,12 @@ export async function checkVsix(options: CheckVsixOptions): Promise<ReleaseManif
     const license = [...files.keys()].find((name) => name.toLowerCase() === "extension/license");
     if (!license || !requiredFile(files, license).equals(expectedLicense)) throw new Error("Packaged LICENSE must match the nonempty source LICENSE exactly.");
   }
-  await validateXml(files, expected, readme);
-  validateReadme(requiredFile(files, readme), files);
+  await validateXml(files, expected, readme, icon);
+  const referencedAssets = validateReadme(requiredFile(files, readme), files, expected);
+  if (icon) referencedAssets.add(icon);
+  for (const name of files.keys()) {
+    if (isRasterAsset(name) && !referencedAssets.has(name)) throw new Error(`Unreferenced VSIX image asset: ${name}.`);
+  }
   const manifest: ReleaseManifest = {
     schemaVersion: 1,
     commit: options.commit.toLowerCase(),

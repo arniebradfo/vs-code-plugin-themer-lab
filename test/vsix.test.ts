@@ -6,6 +6,8 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { test } from "node:test";
+import { createVSIX } from "@vscode/vsce";
+import { fromBufferPromise } from "yauzl";
 import { ZipFile } from "yazl";
 import { editorSamples } from "../src/shared/samples";
 import { requireRecord } from "../src/shared/validation";
@@ -17,6 +19,9 @@ const namespace = "http://schemas.microsoft.com/developer/vsx-schema/2011";
 const contentTypes = '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension=".json" ContentType="application/json"/></Types>';
 const notice = "Third-party fixture notice.\n";
 const runtime = "const fixtureRuntime = 'vsix-runtime-fixture';\n";
+const pngFixture = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAANSURBVBhXY/jPwPAfAAUAAf+mXJtdAAAAAElFTkSuQmCC", "base64");
+const gifFixture = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");
+const jpegFixture = Buffer.from("/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD50ooor8MP9Uz/2Q==", "base64");
 
 interface Fixture {
   files: Map<string, Buffer>;
@@ -37,6 +42,7 @@ function xmlManifest(source: Record<string, unknown>): string {
   <Assets>
     <Asset Type="Microsoft.VisualStudio.Code.Manifest" Path="extension/package.json"/>
     <Asset Type="Microsoft.VisualStudio.Services.Content.Details" Path="extension/readme.md"/>
+    ${typeof source.icon === "string" ? `<Asset Type="Microsoft.VisualStudio.Services.Icons.Default" Path="extension/${xmlEscape(source.icon.replace(/^\.\//, ""))}"/>` : ""}
   </Assets>
 </PackageManifest>`;
 }
@@ -60,6 +66,11 @@ async function withFixture(run: (fixture: Fixture) => Promise<void>): Promise<vo
   put("extension/dist/webview.js", runtime);
   put("extension/dist/webview.css", "body { color: white; }\n");
   put("extension/dist/THIRD_PARTY_LICENSES.txt", notice);
+  if (typeof source.icon === "string") {
+    const name = `extension/${source.icon.replace(/^\.\//, "")}`;
+    const extension = path.posix.extname(name).toLowerCase();
+    files.set(name, extension === ".gif" ? gifFixture : extension === ".jpg" || extension === ".jpeg" ? jpegFixture : pngFixture);
+  }
   for (const name of ["README.md", "publishing.md", "reference.md"]) put(`extension/docs/development/${name}`, "# Developer guide\n");
   for (const sample of editorSamples) put(`extension/samples/${sample.file}`, `Sample ${sample.language}\n`);
   put("extension/samples/tsconfig.json", "{}\n");
@@ -124,7 +135,7 @@ test("VSIX checker reads compressed ZIP members and writes the exact release man
       sha256: createHash("sha256").update(archive).digest("hex"),
       files: [...fixture.files.keys()].sort()
     });
-    assert.equal(result.files.length, 42);
+    assert.equal(result.files.length, fixture.files.size);
     assert.deepEqual(JSON.parse(await readFile(fixture.options.output, "utf8")), result);
     assert.ok(!result.files.some((name) => name.endsWith("/")));
     assert.ok(!existsSync(path.join(fixture.options.root ?? "", "LICENSE")));
@@ -151,7 +162,7 @@ test("VSIX permits the integrated acceptance guide and generated external legal 
     fixture.files.set("extension/readme.md", Buffer.from("[Acceptance](docs/development/acceptance.md)\n"));
     await writeZip(fixture);
     const result = await checkVsix(fixture.options);
-    assert.equal(result.files.length, 45);
+    assert.equal(result.files.length, fixture.files.size);
     assert.ok(result.files.includes("extension/docs/development/acceptance.md"));
   });
 });
@@ -182,6 +193,8 @@ test("VSIX CLI rejects missing, unknown, duplicate, malformed, and positional ar
     ["--vsix", "candidate.zip", "--commit", commit, "--output", "manifest.json"],
     ["--vsix", "candidate.vsix", "--commit", "abc123", "--output", "manifest.json"],
     ["--vsix", "candidate.vsix", "--commit", "g".repeat(40), "--output", "manifest.json"],
+    ["--vsix", "candidate.vsix", "--commit", `${commit}\n`, "--output", "manifest.json"],
+    ["--vsix", "candidate.vsix", "--commit", `${commit}\r\n`, "--output", "manifest.json"],
     ["--vsix", "candidate.vsix", "--commit", commit, "--output", "candidate.vsix"]
   ]) assert.throws(() => parseCheckVsixArgs(args), /argument|--vsix|--commit|--output/i);
 });
@@ -199,7 +212,8 @@ for (const name of ["extension/readme.md", "extension/README.md"]) {
 for (const unsafe of [
   "../extension/readme.md", "/extension/readme.md", "C:/extension/readme.md", "C:extension/readme.md",
   "extension\\readme.md", "extension/../readme.md", "extension/./readme.md", "extension//readme.md",
-  "extension/readme.md:stream", "extension/readme.md.", "extension/readme.md ", "extension/\0readme.md"
+  "extension/readme.md:stream", "extension/readme.md.", "extension/readme.md ", "extension/\0readme.md",
+  "extension/readme.md\n", "extension/\u2028readme.md"
 ]) {
   test(`VSIX rejects unsafe ZIP paths: ${JSON.stringify(unsafe)}`, async () => {
     await withFixture(async (fixture) => {
@@ -264,7 +278,7 @@ test("VSIX rejects empty required files and malformed package/theme JSON", async
   });
 });
 
-for (const field of ["name", "publisher", "version", "main", "license"] as const) {
+for (const field of ["name", "publisher", "version", "main", "license", "icon"] as const) {
   test(`VSIX JSON package ${field} must match source identity and metadata`, async () => {
     await withFixture(async (fixture) => {
       fixture.files.set("extension/package.json", Buffer.from(JSON.stringify({ ...fixture.source, [field]: "wrong" })));
@@ -482,6 +496,9 @@ test("VSIX API rejects invalid commits and refuses to overwrite source package.j
     await writeZip(fixture);
     await assert.rejects(checkVsix({ ...fixture.options, commit: "short" }), /40hex/);
     await assert.rejects(checkVsix({ ...fixture.options, output: path.join(fixture.options.root ?? "", "package.json") }), /overwrite source/);
+    if (process.platform === "win32") {
+      await assert.rejects(checkVsix({ ...fixture.options, output: path.join(fixture.options.root ?? "", "PACKAGE.JSON") }), /overwrite source/);
+    }
     assert.deepEqual(JSON.parse(await readFile(path.join(fixture.options.root ?? "", "package.json"), "utf8")), fixture.source);
   });
 });
@@ -489,9 +506,192 @@ test("VSIX API rejects invalid commits and refuses to overwrite source package.j
 test("VSIX source identity requires a valid semantic version", async () => {
   await withFixture(async (fixture) => {
     await writeZip(fixture);
-    for (const version of ["1.2", "01.2.3", "1.2.3-", "1.2.3-01", "1.2.3-..", "1.2.3+"]) {
+    for (const version of ["1.2", "01.2.3", "1.2.3-", "1.2.3-01", "1.2.3-..", "1.2.3+", "1.2.3\n", "1.2.3\r\n"]) {
       await writeFile(path.join(fixture.options.root ?? "", "package.json"), JSON.stringify({ ...fixture.source, version }));
       await assert.rejects(checkVsix(fixture.options), /must be a semantic version/);
+    }
+  });
+});
+
+test("VSIX source identifiers and API commits reject final-newline byte shapes", async () => {
+  await withFixture(async (fixture) => {
+    await writeZip(fixture);
+    for (const sha of [`${commit}\n`, `${commit}\r\n`, `${commit}\u2028`]) {
+      await assert.rejects(checkVsix({ ...fixture.options, commit: sha }), /40hex/);
+    }
+    for (const field of ["name", "publisher"] as const) {
+      await writeFile(path.join(fixture.options.root ?? "", "package.json"), JSON.stringify({
+        ...fixture.source, [field]: `${fixture.source[field]}\n`
+      }));
+      await assert.rejects(checkVsix(fixture.options), /valid identifiers/);
+    }
+  });
+});
+
+test("VSIX permits referenced PNG, GIF, JPG, and JPEG listing assets in safe nested paths", async () => {
+  await withFixture(async (fixture) => {
+    for (const [name, bytes] of [
+      ["extension/assets/screenshots/dark.png", pngFixture],
+      ["extension/assets/screenshots/preview.gif", gifFixture],
+      ["extension/assets/screenshots/light.JPG", jpegFixture],
+      ["extension/assets/screenshots/detail.jpeg", jpegFixture],
+      ["extension/assets/screenshots/space name.png", pngFixture]
+    ] as const) fixture.files.set(name, bytes);
+    fixture.files.set("extension/readme.md", Buffer.from(`# Raster listing
+![Dark](assets/screenshots/dark.png)
+![Animated](assets/screenshots/preview.gif)
+<img src="assets/screenshots/light.JPG"/>
+[Detail](assets/screenshots/detail.jpeg)
+![Space](assets/screenshots/space%20name.png)
+`));
+    await writeZip(fixture, [{ name: "extension/assets/" }, { name: "extension/assets/screenshots/" }]);
+    assert.equal((await checkVsix(fixture.options)).files.length, fixture.files.size);
+  });
+});
+
+test("VSIX permits raster listing assets referenced through VSCE HTTPS SHA or review-branch rewrites", async () => {
+  await withFixture(async (fixture) => {
+    const name = "extension/assets/screenshots/dark.png";
+    fixture.files.set(name, pngFixture);
+    for (const destination of [
+      `https://raw.githubusercontent.com/arniebradfo/vs-code-plugin-themer-lab/${commit}/assets/screenshots/dark.png`,
+      `https://github.com/arniebradfo/vs-code-plugin-themer-lab/raw/${commit}/assets/screenshots/dark.png`,
+      `https://github.com/arniebradfo/vs-code-plugin-themer-lab/blob/${commit}/assets/screenshots/dark.png`,
+      "https://github.com/arniebradfo/vs-code-plugin-themer-lab/raw/main/assets/screenshots/dark.png"
+    ]) {
+      fixture.files.set("extension/readme.md", Buffer.from(`![Dark](${destination})\n`));
+      await writeZip(fixture);
+      assert.ok((await checkVsix(fixture.options)).files.includes(name));
+    }
+  });
+});
+
+test("VSIX requires the source-declared icon file and its correct XML icon asset", async () => {
+  await withFixture(async (fixture) => {
+    const name = "extension/assets/icon.png";
+    if (typeof fixture.source.icon === "string") fixture.files.delete(`extension/${fixture.source.icon.replace(/^\.\//, "")}`);
+    fixture.source.icon = "./assets/icon.png";
+    await writeFile(path.join(fixture.options.root ?? "", "package.json"), JSON.stringify(fixture.source));
+    fixture.files.set("extension/package.json", Buffer.from(JSON.stringify(fixture.source)));
+    fixture.files.set("extension.vsixmanifest", Buffer.from(xmlManifest(fixture.source)));
+    await writeZip(fixture);
+    await assert.rejects(checkVsix(fixture.options), /Missing required VSIX file: extension\/assets\/icon.png/);
+    fixture.files.set(name, pngFixture);
+    await writeZip(fixture);
+    assert.ok((await checkVsix(fixture.options)).files.includes(name));
+    fixture.files.set("extension.vsixmanifest", Buffer.from(xmlManifest(fixture.source).replace(
+      'Type="Microsoft.VisualStudio.Services.Icons.Default"', 'Type="Wrong.Icon"'
+    )));
+    await writeZip(fixture);
+    await assert.rejects(checkVsix(fixture.options), /XML icon asset/);
+  });
+});
+
+test("VSIX rejects unreferenced raster assets and unrelated remote-image references", async () => {
+  await withFixture(async (fixture) => {
+    fixture.files.set("extension/assets/unused.png", pngFixture);
+    for (const readme of [
+      "# No image references\n",
+      `![Other repository](https://github.com/example/other/raw/${commit}/assets/unused.png)\n`,
+      `![Other host](https://example.com/assets/unused.png)\n`
+    ]) {
+      fixture.files.set("extension/readme.md", Buffer.from(readme));
+      await writeZip(fixture);
+      await assert.rejects(checkVsix(fixture.options), /Unreferenced VSIX image asset/);
+    }
+  });
+});
+
+for (const name of [
+  "extension/assets/icon.svg", "extension/assets/icon.SVG", "extension/assets/source.ts",
+  "extension/assets/source.js", "extension/assets/source.js.map", "extension/assets/build.log",
+  "extension/assets/.env.png", "extension/assets/private.key", "extension/assets/src/preview.png",
+  "extension/assets/reports/preview.png"
+]) {
+  test(`VSIX raster asset allowance still rejects SVG, source, maps, and secrets: ${name}`, async () => {
+    await withFixture(async (fixture) => {
+      await writeZip(fixture, [{ name, content: pngFixture }]);
+      await assert.rejects(checkVsix(fixture.options), /Unexpected VSIX file|Disallowed VSIX entry/);
+    });
+  });
+}
+
+test("VSIX rejects SVG/source data disguised with raster extensions and embedded recognizable secrets", async () => {
+  await withFixture(async (fixture) => {
+    const name = "extension/assets/icon.png";
+    fixture.files.set("extension/readme.md", Buffer.from("![Icon](assets/icon.png)\n"));
+    for (const content of [Buffer.from("<svg xmlns='http://www.w3.org/2000/svg'/>"), Buffer.from("export const source = true;")]) {
+      fixture.files.set(name, content);
+      await writeZip(fixture);
+      await assert.rejects(checkVsix(fixture.options), /Invalid raster image signature/);
+    }
+    fixture.files.set(name, Buffer.concat([pngFixture, Buffer.from(["ghp", "a".repeat(36)].join("_"))]));
+    await writeZip(fixture);
+    await assert.rejects(checkVsix(fixture.options), /Secret-like content in VSIX file/);
+  });
+});
+
+test("VSIX rejects SVG declared icons and SVG README image URLs", async () => {
+  await withFixture(async (fixture) => {
+    const originalIcon = fixture.source.icon;
+    fixture.source.icon = "./assets/icon.svg";
+    await writeFile(path.join(fixture.options.root ?? "", "package.json"), JSON.stringify(fixture.source));
+    await writeZip(fixture);
+    await assert.rejects(checkVsix(fixture.options), /Declared icon must be a PNG, GIF, or JPEG/);
+    if (originalIcon === undefined) delete fixture.source.icon;
+    else fixture.source.icon = originalIcon;
+    await writeFile(path.join(fixture.options.root ?? "", "package.json"), JSON.stringify(fixture.source));
+    fixture.files.set("extension/package.json", Buffer.from(JSON.stringify(fixture.source)));
+    fixture.files.set("extension.vsixmanifest", Buffer.from(xmlManifest(fixture.source)));
+    for (const destination of [
+      "https://example.com/icon.svg", `https://github.com/arniebradfo/vs-code-plugin-themer-lab/raw/${commit}/assets/icon.svg`
+    ]) {
+      fixture.files.set("extension/readme.md", Buffer.from(`![SVG](${destination})\n`));
+      await writeZip(fixture);
+      await assert.rejects(checkVsix(fixture.options), /SVG Marketplace image assets/);
+    }
+  });
+});
+
+test("VSIX checker accepts actual VSCE icon metadata and full-SHA screenshot rewrites", async () => {
+  await withFixture(async (fixture) => {
+    if (typeof fixture.source.icon === "string") fixture.files.delete(`extension/${fixture.source.icon.replace(/^\.\//, "")}`);
+    fixture.source.icon = "./assets/icon.png";
+    fixture.source.scripts = {};
+    fixture.files.set("extension/package.json", Buffer.from(JSON.stringify(fixture.source)));
+    fixture.files.set("extension/assets/icon.png", pngFixture);
+    fixture.files.set("extension/assets/screenshots/dark.png", pngFixture);
+    fixture.files.set("extension/readme.md", Buffer.from("# Review\n\n![Dark screenshot](assets/screenshots/dark.png)\n"));
+    const sourceRoot = fixture.options.root;
+    assert.ok(sourceRoot);
+    for (const [name, content] of fixture.files) {
+      if (!name.startsWith("extension/")) continue;
+      const destination = path.join(sourceRoot, name.slice("extension/".length));
+      await mkdir(path.dirname(destination), { recursive: true });
+      await writeFile(destination, content);
+    }
+    await createVSIX({
+      cwd: sourceRoot, packagePath: fixture.options.vsix, dependencies: false, skipLicense: true, githubBranch: commit
+    });
+    const manifest = await checkVsix(fixture.options);
+    assert.ok(manifest.files.includes("extension/assets/icon.png"));
+    assert.ok(manifest.files.includes("extension/assets/screenshots/dark.png"));
+    const zip = await fromBufferPromise(await readFile(fixture.options.vsix), { autoClose: false });
+    try {
+      let readme: Buffer | undefined;
+      for await (const entry of zip.eachEntry()) {
+        if (entry.fileName !== "extension/readme.md") continue;
+        const chunks: Buffer[] = [];
+        for await (const chunk of await zip.openReadStreamPromise(entry)) {
+          assert.ok(Buffer.isBuffer(chunk));
+          chunks.push(chunk);
+        }
+        readme = Buffer.concat(chunks);
+      }
+      assert.ok(readme);
+      assert.ok(readme.toString("utf8").includes(`/${commit}/assets/screenshots/dark.png`));
+    } finally {
+      zip.close();
     }
   });
 });
