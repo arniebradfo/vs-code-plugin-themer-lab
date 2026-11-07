@@ -42,7 +42,9 @@ editor minimum just to accept newer types.
 and VS Code declaration minor/major updates until those targets are reviewed.
 
 CI runs the same check on Windows and Linux, records the full tooling audit,
-rejects high advisories, and packages a Windows review VSIX. Download it from a successful
+rejects high advisories, and packages and inspects a Windows review VSIX.
+Its artifact includes the source commit, SHA-256, and file inventory.
+Download it from a successful
 [CI run](https://github.com/arniebradfo/vs-code-plugin-themer-lab/actions/workflows/ci.yml).
 These artifacts are experimental builds, not Marketplace releases.
 
