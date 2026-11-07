@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.1.1] - 2026-11-07
+
 Initial public source snapshot for the experimental 0.1.0 build. This is not a
 Marketplace release.
 

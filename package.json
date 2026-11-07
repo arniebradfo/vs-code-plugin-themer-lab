@@ -2,7 +2,7 @@
   "name": "themer-lab",
   "displayName": "Themer Lab: Live Theme Builder",
   "description": "Create a custom theme from a few colors. Preview UI and syntax highlighting live, then apply or export your theme.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "themer-local",
   "private": true,
   "license": "UNLICENSED",
