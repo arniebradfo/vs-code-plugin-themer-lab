@@ -20,6 +20,10 @@ export function requireRunId(value: unknown): string {
   return id;
 }
 
+export function releasePackageFilename(version: string): string {
+  return `themer-lab-${parseReleaseVersion(version)}.vsix`;
+}
+
 export function assertCleanSource(status: string): void {
   if (status.trim()) throw new Error("Release verification requires a clean source checkout. Commit and check the actual candidate source first.");
 }
@@ -105,7 +109,7 @@ export function parseCandidateManifest(value: unknown): CandidateManifest {
     throw new Error("Unexpected candidate extension identity.");
   }
   const packageName = requireString(data.packageName, "Candidate filename");
-  if (packageName !== `themer-lab-${version}.vsix`) throw new Error("Candidate filename must match its version.");
+  if (packageName !== releasePackageFilename(version)) throw new Error("Candidate filename must match its version.");
   const sha256 = requireString(data.sha256, "Candidate SHA-256");
   if (sha256.length !== 64 || !/^[a-f0-9]{64}$/.test(sha256)) throw new Error("Candidate SHA-256 is invalid.");
   if (!Array.isArray(data.files) || data.files.length === 0 ||
@@ -175,7 +179,8 @@ async function sourceMetadata(allowUnreleased: boolean) {
     readFile(path.join(root, "package-lock.json"), "utf8"),
     readFile(path.join(root, "CHANGELOG.md"), "utf8")
   ]);
-  return getReleaseMetadata(JSON.parse(manifest), JSON.parse(lock), changelog, { allowUnreleased });
+  const metadata = getReleaseMetadata(JSON.parse(manifest), JSON.parse(lock), changelog, { allowUnreleased });
+  return { ...metadata, packageFilename: releasePackageFilename(metadata.version) };
 }
 
 export async function verifyCandidate(directory: string, allowUnreleased: boolean): Promise<CandidateManifest> {
@@ -183,7 +188,7 @@ export async function verifyCandidate(directory: string, allowUnreleased: boolea
   const metadata = await sourceMetadata(allowUnreleased);
   const stored = parseCandidateManifest(JSON.parse(await readFile(path.join(directory, "release-manifest.json"), "utf8")));
   if (stored.commit !== git("rev-parse", "HEAD") || stored.version !== metadata.version ||
-      stored.extensionId !== metadata.extensionId || stored.packageName !== metadata.packageName) {
+      stored.extensionId !== metadata.extensionId || stored.packageName !== metadata.packageFilename) {
     throw new Error("Candidate metadata does not match the exact checked-out source.");
   }
   const temporary = await mkdtemp(path.join(os.tmpdir(), "themer-vsix-check-"));
@@ -191,7 +196,7 @@ export async function verifyCandidate(directory: string, allowUnreleased: boolea
     const inspectedPath = path.join(temporary, "inspected.json");
     execFileSync(process.execPath, [
       "--import", "tsx", path.join(root, "tools", "check-vsix.ts"),
-      "--vsix", path.join(directory, metadata.packageName), "--commit", stored.commit, "--output", inspectedPath
+      "--vsix", path.join(directory, metadata.packageFilename), "--commit", stored.commit, "--output", inspectedPath
     ], { cwd: root, stdio: "inherit" });
     const inspected = parseCandidateManifest(JSON.parse(await readFile(inspectedPath, "utf8")));
     assertCandidateMatches(stored, inspected);
@@ -254,7 +259,7 @@ async function workflowPlan(): Promise<void> {
     console.log("Review candidate only. Marketplace publication and GitHub release creation are disabled for this run.");
   }
   await writeOutputs({
-    source, version: metadata.version, tag: metadata.tag, package_name: metadata.packageName,
+    source, version: metadata.version, tag: metadata.tag, package_name: releasePackageFilename(metadata.version),
     build: decision.build && !artifactId, publish: decision.publish,
     allow_unreleased: decision.allowUnreleased, artifact_id: artifactId, artifact_run: artifactRun
   });

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   assertCandidateMatches, assertCleanSource, assertPublicationContext, candidateArtifact, CandidateManifest,
-  parseCandidateManifest, planRelease, releaseRepository, requireCommit, requireRunId
+  parseCandidateManifest, planRelease, releasePackageFilename, releaseRepository, requireCommit, requireRunId
 } from "../tools/release-workflow";
 
 const commit = "a".repeat(40);
@@ -10,6 +10,12 @@ const manifest: CandidateManifest = {
   schemaVersion: 1, commit, version: "0.1.0", extensionId: "themer-local.themer-lab",
   packageName: "themer-lab-0.1.0.vsix", sha256: "b".repeat(64), files: ["extension/package.json"]
 };
+
+test("candidate filenames are versioned VSIX names rather than bare npm package names", () => {
+  assert.equal(releasePackageFilename("0.1.0"), manifest.packageName);
+  assert.equal(releasePackageFilename("1.2.3"), "themer-lab-1.2.3.vsix");
+  assert.throws(() => parseCandidateManifest({ ...manifest, packageName: "themer-lab" }), /filename/);
+});
 
 test("ordinary and dependency main merges never publish an unchanged extension version", () => {
   for (const enabled of [false, true]) {
