@@ -27,7 +27,9 @@ The release workflow prepares PRs; it does not publish, tag, or create GitHub
 releases. Required CI is explicitly dispatched for bot-created branches.
 `GITHUB_TOKEN` pushes do not normally start another workflow. Bot-created PR
 events can also require approval before their workflows run. Explicit dispatch
-avoids either case without a stored personal token or an extra GitHub App.
+starts CI without a stored personal token or an extra GitHub App, but its native
+job checks **do not satisfy required PR checks**. The CI attachment path below
+must verify the actual app-bound checks in the latest PR head's rollup.
 
 ## What still needs the owner
 
@@ -133,6 +135,64 @@ Actions needs permission to create pull requests in repository **Settings >
 Actions > General > Workflow permissions**. The preparation job has narrowly
 scoped branch/PR/CI-dispatch permissions. It does not approve or merge its PR.
 Keep the two required main checks.
+
+### Required CI on bot release PRs
+
+GitHub [does not evaluate native `workflow_dispatch` job checks for required PR
+checks](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks#checks-from-some-workflow-jobs-are-not-evaluated).
+This is separate from its
+[approval-required bot PR events](https://docs.github.com/en/actions/concepts/security/github_token#when-github_token-triggers-workflow-runs).
+Run success and REST check-run success alone are not merge-readiness evidence.
+For example, deployment-free PR #20 had successful native checks at its exact
+head, but an empty PR rollup and an approval-required `pull_request` run.
+
+Prepare release now opens the PR before dispatching CI with `release_pr` and
+`expected_sha`. Ordinary manual CI runs can omit those two inputs; their native
+job results are review evidence, not required-check proof.
+
+For a bot release PR, CI:
+
+1. Uses isolated, trusted `main` check-reporting jobs. Only these jobs receive
+   job-scoped `checks: write` plus read access to contents and Actions. They do
+   not execute PR code or dependency install scripts. The test jobs stay read-only.
+2. Verifies the bot PR, exact source/attempt, same repository, protected-main
+   ancestry, and the single preparation commit. The shared release planner must
+   reproduce its manifests and changelog; script, dependency, license, publisher,
+   and unrelated content changes are rejected.
+3. Starts both required Checks API checks **in progress** and verifies their
+   opaque IDs in the PR rollup before running the native Windows/Linux jobs.
+4. Reads the actual completed native jobs and check runs for this attempt.
+   Successful conclusions require the real type/test/build, audit, and Windows
+   package-inspection/upload steps to pass. Missing, unfinished, mismatched,
+   skipped, or neutral validation cannot produce a successful required check.
+5. Updates only this attempt's checks from those verified results, linking the
+   real job logs. REST responses must retain the source SHA, context names, and
+   GitHub Actions app ID `15368`. The same IDs must appear completed with the
+   actual conclusions in the latest-head PR rollup, and GitHub must classify
+   each as required for this PR.
+
+The protected contexts remain `Check (ubuntu-latest)` and
+`Check (windows-latest)`, bound to GitHub Actions. Native dispatched jobs use
+`Native CI (...)` to avoid confusing them with the reported required checks.
+No manual success status, workflow approval, PAT, additional App, or protection
+change is used. The existing `GITHUB_TOKEN` is an
+[installation token](https://docs.github.com/en/actions/concepts/security/github_token)
+for the built-in App; reporting uses the
+[Checks API](https://docs.github.com/en/rest/checks/runs).
+
+**Verify hosted attachment before treating this path as unattended.** If GitHub
+rejects reporting or does not expose the exact checks in the rollup within the
+bounded wait, CI fails and does not claim required checks passed. Do not weaken
+the app binding or replace missing checks with ad-hoc successes. Owner-approved
+PR workflows remain a separate recovery option if the platform blocks attachment.
+Do not infer readiness from the green native jobs or a dispatched-run URL.
+
+For read-only verification, check `gh pr checks <number> --required` and
+`gh pr view <number> --json headRefOid,statusCheckRollup`. Both required contexts
+must have actual successful results at that latest head. Other main protections,
+including the up-to-date requirement, still apply. A retry must rerun **all** CI
+jobs or dispatch a fresh CI run with the same PR number and exact head; old
+attempts or a failed reporter-only rerun cannot supply a new success.
 
 ## Review a package without publishing
 

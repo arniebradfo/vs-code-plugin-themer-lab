@@ -348,7 +348,8 @@ test("manual workflow is dry-run-first, job-scoped, pinned, duplicate-safe, and 
   assert.match(workflow, /already exists; it will not be overwritten/);
   assert.match(workflow, /gh workflow run ci\.yml --ref \$branch/);
   assert.match(workflow, /suppress CI or leave PR runs awaiting approval/);
-  assert.ok(workflow.indexOf("\n          gh workflow run ci.yml") < workflow.indexOf("\n          gh pr create "));
+  assert.ok(workflow.indexOf("\n          gh pr create ") < workflow.indexOf("\n          gh workflow run ci.yml"));
+  assert.match(workflow, /-f "release_pr=\$\(\$pr.number\)" -f "expected_sha=\$sha"/);
   assert.match(workflow, /Release branch no longer points to the prepared commit/);
   assert.doesNotMatch(workflow, /--force(?:-with-lease)?\b|git tag\b|gh release create|vsce publish|secrets\./);
 });
@@ -373,6 +374,9 @@ function gh {
     if ($env:MOCK_MODE -eq "ci-failure") { $global:LASTEXITCODE = 1 }
   } elseif ($arguments[0] -eq "pr" -and $arguments[1] -eq "create") {
     if ($env:MOCK_MODE -in @("permission", "pr-failure")) { $global:LASTEXITCODE = 1 }
+  } elseif ($arguments[0] -eq "pr" -and $arguments[1] -eq "view") {
+    if ($env:MOCK_MODE -eq "head-change") { '{"number":20,"headRefOid":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}' }
+    else { '{"number":20,"headRefOid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}' }
   } else { throw "Unexpected mocked gh command." }
 }
 function git {
@@ -401,7 +405,7 @@ try {
     await withFixture(async (directory) => {
       const preview = runCli(directory, ["--bump=initial"]);
       assert.equal(preview.status, 0, preview.stderr);
-      for (const mode of ["permission", "non-main", "open-pr", "branch", "tag", "unexpected", "moved", "ci-failure", "pr-failure", "success"]) {
+      for (const mode of ["permission", "non-main", "open-pr", "branch", "tag", "unexpected", "moved", "ci-failure", "pr-failure", "head-change", "success"]) {
         const script = `${harness}\n${scripts[1]}\n${scripts[3]}\n` + String.raw`
   } 3>&1)
 } catch { $failed = $true; $message = $_.Exception.Message }
@@ -422,14 +426,14 @@ try {
         const outcome = JSON.parse(result.stdout) as { failed: boolean; message: string; calls: string[] };
         assert.equal(outcome.failed, mode !== "success", `${mode}: ${outcome.message}`);
         const pushed = outcome.calls.some((call) => call.startsWith("git push "));
-        const dispatched = outcome.calls.findIndex((call) => call === "gh workflow run ci.yml --ref release/v0.1.0");
+        const dispatched = outcome.calls.findIndex((call) => call === "gh workflow run ci.yml --ref release/v0.1.0 -f release_pr=20 -f expected_sha=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         const opened = outcome.calls.findIndex((call) => call.startsWith("gh pr create "));
-        assert.equal(pushed, ["permission", "moved", "ci-failure", "pr-failure", "success"].includes(mode), mode);
-        assert.equal(dispatched >= 0, ["permission", "ci-failure", "pr-failure", "success"].includes(mode), mode);
-        assert.equal(opened >= 0, ["permission", "pr-failure", "success"].includes(mode), mode);
-        if (opened >= 0) assert.ok(dispatched < opened);
+        assert.equal(pushed, ["permission", "moved", "ci-failure", "pr-failure", "head-change", "success"].includes(mode), mode);
+        assert.equal(dispatched >= 0, ["ci-failure", "success"].includes(mode), mode);
+        assert.equal(opened >= 0, ["permission", "ci-failure", "pr-failure", "head-change", "success"].includes(mode), mode);
+        if (dispatched >= 0) assert.ok(opened < dispatched);
         if (mode === "permission") assert.match(outcome.message, /a maintainer must deliberately enable 'Allow GitHub Actions to create and approve pull requests'/);
-        if (mode === "ci-failure") assert.match(outcome.message, /no PR was created/);
+        if (mode === "ci-failure") assert.match(outcome.message, /PR exists but required CI is NOT verified/);
       }
     });
   });

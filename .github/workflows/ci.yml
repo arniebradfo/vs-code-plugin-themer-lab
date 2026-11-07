@@ -5,6 +5,17 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      release_pr:
+        description: Bot release PR number; omit for an ordinary manual CI run
+        type: string
+        required: false
+        default: ""
+      expected_sha:
+        description: Exact bot PR head paired with release_pr
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -14,8 +25,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  begin_release_pr_checks:
+    name: Begin release PR checks
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.release_pr != '' || inputs.expected_sha != '') }}
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Start exact-head checks and verify PR association
+        id: checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_PR: ${{ inputs.release_pr }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        shell: pwsh
+        run: |
+          node --import tsx .\tools\release-pr-checks.ts --phase start --pr $env:RELEASE_PR --sha $env:EXPECTED_SHA
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    outputs:
+      checks: ${{ steps.checks.outputs.checks }}
+
   check:
-    name: Check (${{ matrix.os }})
+    needs: begin_release_pr_checks
+    if: ${{ always() && !cancelled() && (needs.begin_release_pr_checks.result == 'success' || needs.begin_release_pr_checks.result == 'skipped') }}
+    name: ${{ github.event_name == 'workflow_dispatch' && inputs.release_pr != '' && 'Native CI' || 'Check' }} (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -56,3 +100,33 @@ jobs:
             artifacts\release-manifest.json
           if-no-files-found: error
           retention-days: 14
+
+  attach_release_pr_checks:
+    name: Attach actual release PR CI results
+    needs: [begin_release_pr_checks, check]
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && needs.begin_release_pr_checks.result == 'success' }}
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Report verified native conclusions and verify required-check rollup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_PR: ${{ inputs.release_pr }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          CHECKS_JSON: ${{ needs.begin_release_pr_checks.outputs.checks }}
+        shell: pwsh
+        run: |
+          node --import tsx .\tools\release-pr-checks.ts --phase finish --pr $env:RELEASE_PR --sha $env:EXPECTED_SHA
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
