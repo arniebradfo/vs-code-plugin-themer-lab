@@ -20,6 +20,19 @@ npm run check
 `check` runs strict type checking, the unit tests, and the build. No extension
 is installed and no real editor settings are changed by that command.
 
+The compiler is **TypeScript 7**. Keep optional dependencies enabled during
+installation: they supply its platform-specific native compiler executable.
+[Compiler settings](../../tsconfig.json) use `Preserve` modules, `Bundler`
+resolution, and an explicit repository `rootDir` for type checking. These
+settings do not change the extension to ESM: esbuild still writes the Node 22
+CommonJS extension and the browser webview bundle.
+
+[Sample validation](../../test/samples.test.ts) runs the installed compiler CLI
+against the standalone TypeScript, TSX, and JavaScript sample project. It checks
+the resolved file set and strict options before checking diagnostics. It does
+not depend on the legacy TypeScript compiler API or a second compatibility
+compiler.
+
 Keep Node type definitions aligned with the extension's
 [build target](../../tools/build.mjs). VS Code declarations use a patch-only
 range no newer than the minimum in the [manifest](../../package.json). Not every

@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "rootDir": ".",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["node", "vscode"],
     "strict": true,

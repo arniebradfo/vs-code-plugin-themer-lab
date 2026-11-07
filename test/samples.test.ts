@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { test } from "node:test";
 import { parse, ParseError } from "jsonc-parser";
-import ts from "typescript";
 import { editorSamples } from "../src/shared/samples";
+import { requireRecord } from "../src/shared/validation";
 
 const directory = path.resolve(__dirname, "..", "samples");
 
@@ -24,24 +25,31 @@ test("the sample catalog maps unique language IDs to real, nonempty source files
   }));
 });
 
-test("TypeScript, TSX, and JavaScript examples typecheck without third-party libraries", () => {
+test("TypeScript, TSX, and JavaScript examples typecheck without third-party libraries", async () => {
   const configFile = path.join(directory, "tsconfig.json");
-  const config = ts.readConfigFile(configFile, ts.sys.readFile);
-  assert.equal(config.error, undefined);
-  const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, directory);
-  assert.deepEqual(parsed.errors, []);
-  assert.deepEqual(parsed.fileNames.map((file) => path.basename(file)).sort(), ["card.tsx", "palette.js", "theme.ts"]);
-  assert.equal(parsed.options.noEmit, true);
-  assert.equal(parsed.options.strict, true);
-  assert.equal(parsed.options.checkJs, true);
-  assert.deepEqual(parsed.options.types, []);
-  const program = ts.createProgram(parsed.fileNames, parsed.options);
-  const diagnostics = ts.getPreEmitDiagnostics(program);
-  assert.equal(diagnostics.length, 0, ts.formatDiagnosticsWithColorAndContext(diagnostics, {
-    getCanonicalFileName: (file) => file,
-    getCurrentDirectory: () => directory,
-    getNewLine: () => "\n"
-  }));
+  const compilerDirectory = path.dirname(require.resolve("typescript/package.json"));
+  const manifest = requireRecord(JSON.parse(await readFile(path.join(compilerDirectory, "package.json"), "utf8")), "Compiler manifest");
+  const commands = requireRecord(manifest.bin, "Compiler commands");
+  assert.ok(typeof commands.tsc === "string");
+  const compiler = path.resolve(compilerDirectory, commands.tsc);
+  const runCompiler = (...args: string[]) => {
+    const result = spawnSync(process.execPath, [compiler, "--project", configFile, "--pretty", "false", ...args], { encoding: "utf8" });
+    assert.ifError(result.error);
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    return result.stdout;
+  };
+  const config = requireRecord(JSON.parse(runCompiler("--showConfig")), "Sample compiler configuration");
+  assert.ok(Array.isArray(config.files));
+  assert.deepEqual(config.files.map((file: unknown) => {
+    assert.ok(typeof file === "string");
+    return path.basename(file);
+  }).sort(), ["card.tsx", "palette.js", "theme.ts"]);
+  const options = requireRecord(config.compilerOptions, "Sample compiler options");
+  assert.equal(options.noEmit, true);
+  assert.equal(options.strict, true);
+  assert.equal(options.checkJs, true);
+  assert.deepEqual(options.types, []);
+  runCompiler("--noEmit");
 });
 
 test("JSON and JSONC examples are valid in their respective language modes", async () => {
