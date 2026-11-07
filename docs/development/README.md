@@ -191,6 +191,30 @@ npm run package
 
 The local VSIX is written to `artifacts\themer-lab-<version>.vsix`, using the
 current manifest version.
+Verify the actual archive before installing or reusing it:
+
+```powershell
+$commit = git rev-parse HEAD
+$version = (Get-Content .\package.json | ConvertFrom-Json).version
+npm run check:vsix -- --vsix ".\artifacts\themer-lab-$version.vsix" --commit $commit --output ".\artifacts\release-manifest.json"
+```
+
+The checker reads ZIP members, not a source file listing. It checks both
+extension manifests, runtime bundles, themes, samples, packaged documentation,
+local README links, and third-party notices. It rejects unsafe or duplicate
+paths, unwanted files, damaged member data, and recognizable credential
+formats. HTTPS README links rewritten by VSCE remain valid, including links
+to a full source commit SHA. If the source has `LICENSE`, the archive must
+include the same nonempty bytes. Local review builds can still use the
+placeholder publisher without a project license.
+
+The JSON output contains `schemaVersion: 1`, `commit`, `version`, `extensionId`,
+`packageName`, `sha256`, and sorted `files` (full ZIP member paths, excluding
+directory entries). It is written only after validation succeeds. Archive limits
+are 128 MiB compressed, 128 MiB expanded, 32 MiB per member, and 1,024 entries.
+This integrity check does not approve a release or prove ownership of a
+publisher or license.
+
 Install it with **Extensions: Install from VSIX...**, or replace the local
 development build from a terminal:
 
