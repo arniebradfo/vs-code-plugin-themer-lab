@@ -1,43 +1,264 @@
 name: Publish to Marketplace
 
 on:
+  push:
+    branches: [main]
+    paths: [package.json, package-lock.json, CHANGELOG.md]
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Review a candidate, or publish after owner enablement
+        type: choice
+        options: [review, publish]
+        default: review
+      candidate_run:
+        description: Optional earlier main run whose exact candidate must be reused
+        type: string
+        required: false
 
 permissions:
   contents: read
+
+env:
+  MARKETPLACE_PUBLISH_ENABLED: ${{ vars.MARKETPLACE_PUBLISH_ENABLED || 'false' }}
 
 concurrency:
   group: marketplace-publish
   cancel-in-progress: false
 
 jobs:
-  publish:
+  plan:
     runs-on: windows-latest
-    environment: marketplace
     permissions:
       contents: read
-      id-token: write
+      actions: read
+    outputs:
+      source: ${{ steps.plan.outputs.source }}
+      version: ${{ steps.plan.outputs.version }}
+      package_name: ${{ steps.plan.outputs.package_name }}
+      build: ${{ steps.plan.outputs.build }}
+      publish: ${{ steps.plan.outputs.publish }}
+      allow_unreleased: ${{ steps.plan.outputs.allow_unreleased }}
+      artifact_id: ${{ steps.plan.outputs.artifact_id }}
+      artifact_run: ${{ steps.plan.outputs.artifact_run }}
     steps:
-      - name: Require main
-        shell: pwsh
-        run: |
-          if ($env:GITHUB_REF -ne 'refs/heads/main') {
-            throw 'Marketplace publication must use main.'
-          }
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - name: Reject unfinished publisher and license setup
-        run: npm run check:release
+      - run: npm ci --include=optional
+      - name: Resolve exact source and immutable candidate
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_MODE: ${{ inputs.mode || 'review' }}
+          CANDIDATE_RUN: ${{ inputs.candidate_run }}
+        run: node --import tsx .\tools\release-workflow.ts plan
+
+  candidate:
+    needs: plan
+    if: needs.plan.outputs.build == 'true'
+    runs-on: windows-latest
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.source }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --include=optional
       - run: npm run check
-      - run: npm run package
-      - name: Publish reviewed package with a short-lived OIDC credential
+      - name: Check public release prerequisites
+        if: needs.plan.outputs.publish == 'true'
+        run: npm run check:release
+      - name: Reject unresolved development advisories on the public release path
+        if: needs.plan.outputs.publish == 'true'
+        run: npm audit --audit-level=moderate
+      - name: Package one exact candidate
+        shell: pwsh
+        env:
+          SOURCE_COMMIT: ${{ needs.plan.outputs.source }}
+          PACKAGE_NAME: ${{ needs.plan.outputs.package_name }}
+          RELEASE_PUBLISH: ${{ needs.plan.outputs.publish }}
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          $package = Join-Path artifacts $env:PACKAGE_NAME
+          if ($env:RELEASE_PUBLISH -eq 'true') {
+            & node .\node_modules\@vscode\vsce\vsce package --githubBranch $env:SOURCE_COMMIT --out $package
+          } else {
+            & node .\node_modules\@vscode\vsce\vsce package --skip-license --githubBranch $env:SOURCE_COMMIT --out $package
+          }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Inspect the actual VSIX and record its source and checksum
+        env:
+          SOURCE_COMMIT: ${{ needs.plan.outputs.source }}
+          PACKAGE_NAME: ${{ needs.plan.outputs.package_name }}
         shell: pwsh
         run: |
-          $version = (Get-Content -LiteralPath package.json -Raw | ConvertFrom-Json).version
-          $package = "artifacts\themer-lab-$version.vsix"
-          & .\node_modules\.bin\vsce.cmd publish --oidc --packagePath $package
+          $package = Join-Path artifacts $env:PACKAGE_NAME
+          & node --import tsx .\tools\check-vsix.ts --vsix $package --commit $env:SOURCE_COMMIT --output artifacts\release-manifest.json
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Record and verify release notes and checksum
+        env:
+          ALLOW_UNRELEASED: ${{ needs.plan.outputs.allow_unreleased }}
+        shell: pwsh
+        run: |
+          $options = @()
+          if ($env:ALLOW_UNRELEASED -eq 'true') { $options += '--allow-unreleased' }
+          & node --import tsx .\tools\release-workflow.ts notes artifacts @options
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & node --import tsx .\tools\release-workflow.ts verify artifacts @options
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Retain the immutable candidate before any publication
+        id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-candidate-${{ needs.plan.outputs.source }}
+          path: |
+            artifacts\${{ needs.plan.outputs.package_name }}
+            artifacts\release-manifest.json
+            artifacts\release-notes.md
+            artifacts\SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 90
+
+  verify:
+    needs: [plan, candidate]
+    if: ${{ always() && needs.plan.result == 'success' && (needs.candidate.result == 'success' || needs.plan.outputs.artifact_id != '') }}
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.source }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --include=optional
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.plan.outputs.artifact_id || needs.candidate.outputs.artifact_id }}
+          run-id: ${{ needs.plan.outputs.artifact_run }}
+          github-token: ${{ github.token }}
+          path: artifacts
+          merge-multiple: true
+          digest-mismatch: error
+      - name: Verify the retained artifact, including on a read-only retry
+        env:
+          ALLOW_UNRELEASED: ${{ needs.plan.outputs.allow_unreleased }}
+        shell: pwsh
+        run: |
+          $options = @()
+          if ($env:ALLOW_UNRELEASED -eq 'true') { $options += '--allow-unreleased' }
+          & node --import tsx .\tools\release-workflow.ts verify artifacts @options
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  publish:
+    needs: [plan, candidate, verify]
+    if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.publish == 'true' && needs.verify.result == 'success' }}
+    runs-on: windows-latest
+    timeout-minutes: 20
+    environment: marketplace
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.source }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --include=optional
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.plan.outputs.artifact_id || needs.candidate.outputs.artifact_id }}
+          run-id: ${{ needs.plan.outputs.artifact_run }}
+          github-token: ${{ github.token }}
+          path: artifacts
+          merge-multiple: true
+          digest-mismatch: error
+      - run: npm run check:release
+      - run: npm audit --audit-level=moderate
+      - name: Reconcile Marketplace state and publish only these exact bytes
+        run: node --import tsx .\tools\publish-release.ts --publish artifacts
+
+  github-release:
+    needs: [plan, candidate, publish]
+    if: ${{ always() && needs.publish.result == 'success' }}
+    runs-on: windows-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.source }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --include=optional
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.plan.outputs.artifact_id || needs.candidate.outputs.artifact_id }}
+          run-id: ${{ needs.plan.outputs.artifact_run }}
+          github-token: ${{ github.token }}
+          path: artifacts
+          merge-multiple: true
+          digest-mismatch: error
+      - name: Complete the matching tag and GitHub release without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node --import tsx .\tools\github-release.ts --complete artifacts
+
+  summary:
+    if: always()
+    needs: [plan, candidate, verify, publish, github-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record results and safe retry instructions
+        env:
+          SOURCE_COMMIT: ${{ needs.plan.outputs.source }}
+          VERSION: ${{ needs.plan.outputs.version }}
+          CANDIDATE_RUN: ${{ needs.plan.outputs.artifact_run }}
+          PLAN_RESULT: ${{ needs.plan.result }}
+          CANDIDATE_RESULT: ${{ needs.candidate.result }}
+          VERIFY_RESULT: ${{ needs.verify.result }}
+          MARKETPLACE_RESULT: ${{ needs.publish.result }}
+          RELEASE_RESULT: ${{ needs.github-release.result }}
+        shell: bash
+        run: |
+          {
+            echo '## Release pipeline'
+            echo "- Source: $SOURCE_COMMIT"
+            echo "- Version: $VERSION"
+            echo "- Plan: $PLAN_RESULT; candidate: $CANDIDATE_RESULT; retained-byte verification: $VERIFY_RESULT"
+            echo "- Marketplace job: $MARKETPLACE_RESULT; GitHub release job: $RELEASE_RESULT"
+            echo ''
+            echo 'A skipped publishing job is not a deployment. Review mode never uploads or creates a release.'
+            echo 'After an uncertain upload, use mode=publish and candidate_run='"$CANDIDATE_RUN"' to reuse the retained bytes.'
+            echo 'Never rebuild or overwrite an already published version. Roll back with a new higher version.'
+            echo '[Publishing and recovery guide](https://github.com/arniebradfo/vs-code-plugin-themer-lab/blob/main/docs/development/publishing.md)'
+          } >> "$GITHUB_STEP_SUMMARY"

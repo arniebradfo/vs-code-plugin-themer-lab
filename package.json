@@ -78,6 +78,7 @@
     "build": "node tools/build.mjs",
     "vscode:prepublish": "npm run build",
     "package": "node -e \"require('node:fs').mkdirSync('artifacts', { recursive: true })\" && vsce package --skip-license --githubBranch main --out artifacts",
+    "check:vsix": "tsx tools/check-vsix.ts",
     "check:release": "tsx tools/check-release.ts",
     "test:extension": "tsx tools/test-extension.ts",
     "capture:syntax": "npm run build && tsx tools/test-syntax.ts --capture-only",
@@ -94,10 +95,18 @@
     "@types/culori": "^4.0.1",
     "@types/node": "^22.15.0",
     "@types/vscode": "~1.140.0",
+    "@types/xml2js": "^0.4.14",
+    "@types/yauzl": "^3.4.0",
+    "@types/yazl": "2.4.2",
     "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^4.1.0",
     "esbuild": "^0.28.2",
+    "marked": "^18.0.11",
+    "parse5": "^8.0.1",
     "tsx": "^4.19.4",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "xml2js": "^0.5.0",
+    "yauzl": "^3.4.0",
+    "yazl": "^2.5.1"
   }
 }

@@ -41,8 +41,10 @@ editor minimum just to accept newer types.
 [Dependabot](../../.github/dependabot.yml) ignores incompatible Node type majors
 and VS Code declaration minor/major updates until those targets are reviewed.
 
-CI runs the same check on Windows and Linux, then packages a Windows review
-VSIX. Download it from a successful
+CI runs the same check on Windows and Linux, records the full tooling audit,
+rejects high advisories, and packages and inspects a Windows review VSIX.
+Its artifact includes the source commit, SHA-256, and file inventory.
+Download it from a successful
 [CI run](https://github.com/arniebradfo/vs-code-plugin-themer-lab/actions/workflows/ci.yml).
 These artifacts are experimental builds, not Marketplace releases.
 
@@ -69,6 +71,14 @@ normal user settings or this repository as the preview workspace.
 - [Legacy theme-name migration](reference.md#upgrading-older-theme-names)
 - [Scope, milestones, and review gates](../../PLAN.md)
 - [Implementation checkpoints](../../reports/implementation-status.md)
+- [Release PRs, review candidates, publishing, and safe retries](publishing.md)
+- [Isolated native release acceptance](acceptance.md)
+
+The [publishing workflow](../../.github/workflows/publish.yml) defaults to
+review mode and requires explicit owner enablement before publication. Its
+review artifacts bind the actual VSIX to a source commit, checksum, file
+inventory, and release notes. Release PR preparation and native acceptance have
+separate workflows; neither deploys to Marketplace.
 
 The technical reference preserves the detailed material that previously lived
 in the root README. Source, fixtures, and reports are repository resources and
@@ -183,6 +193,35 @@ npm run package
 
 The local VSIX is written to `artifacts\themer-lab-<version>.vsix`, using the
 current manifest version.
+Verify the actual archive before installing or reusing it:
+
+```powershell
+$commit = git rev-parse HEAD
+$version = (Get-Content .\package.json | ConvertFrom-Json).version
+npm run check:vsix -- --vsix ".\artifacts\themer-lab-$version.vsix" --commit $commit --output ".\artifacts\release-manifest.json"
+```
+
+The checker reads ZIP members, not a source file listing. It checks both
+extension manifests, runtime bundles, themes, samples, packaged documentation,
+local README links, and third-party notices. It rejects unsafe or duplicate
+paths, unwanted files, damaged member data, and recognizable credential
+formats. HTTPS README links rewritten by VSCE remain valid, including links
+to a full source commit SHA. Safe PNG, GIF, and JPEG files under `assets`
+are allowed when referenced by the manifest icon or packaged README, including
+GitHub image links rewritten by VSCE. Their raster signatures are checked;
+SVG image assets, unreferenced images, source files, and maps remain excluded.
+A declared icon must be packaged and linked by the VSIX XML manifest.
+If the source has `LICENSE`, the archive must
+include the same nonempty bytes. Local review builds can still use the
+placeholder publisher without a project license.
+
+The JSON output contains `schemaVersion: 1`, `commit`, `version`, `extensionId`,
+`packageName`, `sha256`, and sorted `files` (full ZIP member paths, excluding
+directory entries). It is written only after validation succeeds. Archive limits
+are 128 MiB compressed, 128 MiB expanded, 32 MiB per member, and 1,024 entries.
+This integrity check does not approve a release or prove ownership of a
+publisher or license.
+
 Install it with **Extensions: Install from VSIX...**, or replace the local
 development build from a terminal:
 

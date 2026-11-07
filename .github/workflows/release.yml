@@ -1,0 +1,139 @@
+name: Prepare release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Preview only; no branch, PR, CI dispatch, tag, or publication
+        type: boolean
+        required: true
+        default: true
+      bump:
+        description: Initial finalizes the current version; other choices increment it
+        type: choice
+        required: true
+        default: patch
+        options: [patch, minor, major, initial]
+      version:
+        description: Optional stable X.Y.Z confirmation; must equal the selected bump
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-preparation
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    if: ${{ inputs.dry_run }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Write ignored review files and show the patch
+        env:
+          RELEASE_BUMP: ${{ inputs.bump }}
+          EXACT_VERSION: ${{ inputs.version }}
+        shell: pwsh
+        run: |
+          $arguments = @("--bump", $env:RELEASE_BUMP, "--dry-run")
+          if ($env:EXACT_VERSION) { $arguments += @("--version", $env:EXACT_VERSION) }
+          npx --no-install tsx tools\prepare-release.ts @arguments
+          if ($LASTEXITCODE -ne 0) { throw "Release preview failed." }
+          Get-Content artifacts\release-plan\release.patch
+
+  prepare:
+    if: ${{ !inputs.dry_run }}
+    runs-on: windows-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Require main and explain bot PR permission
+        env:
+          SOURCE_REF: ${{ github.ref }}
+        shell: pwsh
+        run: |
+          if ($env:SOURCE_REF -ne "refs/heads/main") { throw "Dispatch a non-dry-run release from main only." }
+          # Repository permission settings need administration:read, unavailable to this job token.
+          Write-Warning "Bot PRs require 'Allow GitHub Actions to create and approve pull requests' in Settings > Actions > General > Workflow permissions. Only a maintainer may approve that setting. This job does not query or change it; gh pr create will fail explicitly if it is disabled. Only GITHUB_TOKEN is used, with no PAT or App fallback."
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Prepare version, lock metadata, and changelog
+        env:
+          RELEASE_BUMP: ${{ inputs.bump }}
+          EXACT_VERSION: ${{ inputs.version }}
+        shell: pwsh
+        run: |
+          $arguments = @("--bump", $env:RELEASE_BUMP, "--write")
+          if ($env:EXACT_VERSION) { $arguments += @("--version", $env:EXACT_VERSION) }
+          npx --no-install tsx tools\prepare-release.ts @arguments
+          if ($LASTEXITCODE -ne 0) { throw "Release preparation failed." }
+      - name: Create a new release branch, explicitly dispatch CI, and open its PR
+        shell: pwsh
+        run: |
+          $plan = Get-Content artifacts\release-plan\plan.json -Raw | ConvertFrom-Json
+          $branch = "release/$($plan.tag)"
+          $prs = gh pr list --base main --state open --json number,headRefName,url
+          if ($LASTEXITCODE -ne 0) { throw "Cannot check existing release PRs." }
+          $existing = @($prs | ConvertFrom-Json | Where-Object { $_.headRefName.StartsWith("release/v") })
+          if ($existing.Count -gt 0) { throw "An open release PR already exists. Review it before preparing another release." }
+          git ls-remote --exit-code --heads origin "refs/heads/$branch"
+          if ($LASTEXITCODE -eq 0) { throw "Release branch $branch already exists; it will not be overwritten. Review or recover it manually." }
+          if ($LASTEXITCODE -ne 2) { throw "Cannot check the remote release branch." }
+          git ls-remote --exit-code --tags origin "refs/tags/$($plan.tag)"
+          if ($LASTEXITCODE -eq 0) { throw "Release tag $($plan.tag) already exists." }
+          if ($LASTEXITCODE -ne 2) { throw "Cannot check the remote release tag." }
+          $allowed = @("package.json", "package-lock.json", "CHANGELOG.md")
+          $changed = @(git diff --name-only)
+          if ($LASTEXITCODE -ne 0) { throw "Cannot inspect release changes." }
+          if ($changed.Count -eq 0 -or @($changed | Where-Object { $_ -notin $allowed }).Count -gt 0) {
+            throw "Preparation must change only version/changelog metadata."
+          }
+          git switch --create $branch
+          if ($LASTEXITCODE -ne 0) { throw "Cannot create the release branch." }
+          git config user.name "github-actions[bot]"
+          if ($LASTEXITCODE -ne 0) { throw "Cannot set the bot commit name." }
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ($LASTEXITCODE -ne 0) { throw "Cannot set the bot commit email." }
+          git add -- package.json package-lock.json CHANGELOG.md
+          if ($LASTEXITCODE -ne 0) { throw "Cannot stage release metadata." }
+          git commit -m "chore(release): $($plan.tag)" -m "Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          if ($LASTEXITCODE -ne 0) { throw "Cannot commit release metadata." }
+          $sha = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { throw "Cannot read the release commit." }
+          git push --set-upstream origin "HEAD:refs/heads/$branch"
+          if ($LASTEXITCODE -ne 0) { throw "Cannot push the new release branch; no force push is used." }
+          $remote = git ls-remote --heads origin "refs/heads/$branch"
+          if ($LASTEXITCODE -ne 0 -or ($remote -split "\s+")[0] -ne $sha) { throw "Release branch no longer points to the prepared commit." }
+          # Bot events can suppress CI or leave PR runs awaiting approval; dispatch unattended CI explicitly.
+          gh workflow run ci.yml --ref $branch
+          if ($LASTEXITCODE -ne 0) {
+            throw "CI dispatch failed for $branch ($sha). The branch remains for manual recovery; no PR was created. Explicitly dispatch ci.yml for this branch before opening its PR."
+          }
+          Write-Output "Explicitly requested ci.yml for $branch at $sha."
+          gh pr create --base main --head $branch --title "chore(release): $($plan.tag)" --body-file artifacts\release-plan\summary.md
+          if ($LASTEXITCODE -ne 0) {
+            throw "PR creation failed. If Actions PR creation is disabled, a maintainer must deliberately enable 'Allow GitHub Actions to create and approve pull requests' in Settings > Actions > General > Workflow permissions. No permission is changed and no PAT or App fallback is used. The branch and its dispatched CI remain for manual recovery."
+          }

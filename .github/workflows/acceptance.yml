@@ -1,0 +1,176 @@
+name: Desktop release acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      vscode_version:
+        description: "Host smoke: exact stable VS Code version. Native UI stays source-checked on 1.143.1."
+        required: true
+        default: "1.143.0"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: acceptance-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  host-smoke:
+    name: Host smoke (${{ matrix.os }}, VS Code ${{ inputs.vscode_version }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022, macos-15]
+    env:
+      VSCODE_VERSION: ${{ inputs.vscode_version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set workspace-local scratch and log paths
+        run: |
+          $logs = Join-Path (Join-Path $env:GITHUB_WORKSPACE 'artifacts') 'acceptance-logs'
+          $scratch = Join-Path (Join-Path $env:GITHUB_WORKSPACE '.vscode-test') 'acceptance-scratch'
+          New-Item -ItemType Directory -Force $logs, $scratch | Out-Null
+          "ACCEPTANCE_LOG_DIR=$logs", "TMPDIR=$scratch", "TEMP=$scratch", "TMP=$scratch" |
+            Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install declared dependencies
+        run: |
+          npm ci 2>&1 | Tee-Object -FilePath (Join-Path $env:ACCEPTANCE_LOG_DIR 'install.log')
+          exit $LASTEXITCODE
+      - name: Check helper, types, and build
+        id: build
+        run: |
+          $log = Join-Path $env:ACCEPTANCE_LOG_DIR 'build.log'
+          npm run typecheck 2>&1 | Tee-Object -FilePath $log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npx --no-install tsx --test (Join-Path 'test' 'prepare-test-editor.test.ts') 2>&1 |
+            Tee-Object -FilePath $log -Append
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run build 2>&1 | Tee-Object -FilePath $log -Append
+          exit $LASTEXITCODE
+      - name: Download exact isolated host editor
+        id: editor
+        run: |
+          npx --no-install tsx (Join-Path 'tools' 'prepare-test-editor.ts') --download --version $env:VSCODE_VERSION 2>&1 |
+            Tee-Object -FilePath (Join-Path $env:ACCEPTANCE_LOG_DIR 'editor.log')
+          exit $LASTEXITCODE
+      - name: Standard extension host (28 groups, both modes)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.editor.outcome == 'success' }}
+        run: |
+          $log = Join-Path $env:ACCEPTANCE_LOG_DIR 'host.log'
+          if ($env:RUNNER_OS -eq 'Linux') {
+            xvfb-run --auto-servernum '--server-args=-screen 0 1920x1080x24 -nolisten tcp' npm run test:extension 2>&1 |
+              Tee-Object -FilePath $log
+          } else {
+            npm run test:extension 2>&1 | Tee-Object -FilePath $log
+          }
+          $code = $LASTEXITCODE
+          "Host exit code: $code" | Tee-Object -FilePath $log -Append
+          if ($code -ne 0) { exit $code }
+          $groups = @(Get-Content -LiteralPath $log | Where-Object { $_ -cmatch '^PASS ' }).Count
+          "Host groups: $groups (expected 28)" | Tee-Object -FilePath $log -Append
+          if ($groups -ne 28) { throw "Expected all 28 standard host groups; found $groups." }
+      - name: Empty-window extension host (4 groups, both modes)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.editor.outcome == 'success' }}
+        run: |
+          $log = Join-Path $env:ACCEPTANCE_LOG_DIR 'empty-window.log'
+          if ($env:RUNNER_OS -eq 'Linux') {
+            xvfb-run --auto-servernum '--server-args=-screen 0 1920x1080x24 -nolisten tcp' npm run test:extension -- --empty-window 2>&1 |
+              Tee-Object -FilePath $log
+          } else {
+            npm run test:extension -- --empty-window 2>&1 | Tee-Object -FilePath $log
+          }
+          $code = $LASTEXITCODE
+          "Empty-window exit code: $code" | Tee-Object -FilePath $log -Append
+          if ($code -ne 0) { exit $code }
+          $groups = @(Get-Content -LiteralPath $log | Where-Object { $_ -cmatch '^PASS ' }).Count
+          "Empty-window groups: $groups (expected 4)" | Tee-Object -FilePath $log -Append
+          if ($groups -ne 4) { throw "Expected all 4 empty-window host groups; found $groups." }
+      - name: Upload host logs, including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: acceptance-host-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.ACCEPTANCE_LOG_DIR }}
+          if-no-files-found: warn
+          retention-days: 14
+
+  native-ui:
+    name: Native UI (${{ matrix.os }}, ${{ matrix.startup_mode }} startup)
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022, macos-15]
+        startup_mode: [dark, light]
+    env:
+      VSCODE_VERSION: "1.143.1"
+      THEMER_STARTUP_MODE: ${{ matrix.startup_mode }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set workspace-local scratch and log paths
+        run: |
+          $logs = Join-Path (Join-Path $env:GITHUB_WORKSPACE 'artifacts') 'acceptance-logs'
+          $scratch = Join-Path (Join-Path $env:GITHUB_WORKSPACE '.vscode-test') 'acceptance-scratch'
+          New-Item -ItemType Directory -Force $logs, $scratch | Out-Null
+          "ACCEPTANCE_LOG_DIR=$logs", "TMPDIR=$scratch", "TEMP=$scratch", "TMP=$scratch" |
+            Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install declared dependencies
+        run: |
+          npm ci 2>&1 | Tee-Object -FilePath (Join-Path $env:ACCEPTANCE_LOG_DIR 'install.log')
+          exit $LASTEXITCODE
+      - name: Build development extension
+        run: |
+          npm run build 2>&1 | Tee-Object -FilePath (Join-Path $env:ACCEPTANCE_LOG_DIR 'build.log')
+          exit $LASTEXITCODE
+      - name: Download pinned editor and verify both native source chains
+        run: |
+          npx --no-install tsx (Join-Path 'tools' 'prepare-test-editor.ts') --download --version $env:VSCODE_VERSION --verify-native-sources 2>&1 |
+            Tee-Object -FilePath (Join-Path $env:ACCEPTANCE_LOG_DIR 'editor.log')
+          exit $LASTEXITCODE
+      - name: Focused native UI colors (both modes)
+        run: |
+          $log = Join-Path $env:ACCEPTANCE_LOG_DIR 'native-ui.log'
+          if ($env:RUNNER_OS -eq 'Linux') {
+            xvfb-run --auto-servernum '--server-args=-screen 0 1920x1080x24 -nolisten tcp' npm run test:syntax -- --ui-colors-only "--mode=$env:THEMER_STARTUP_MODE" 2>&1 |
+              Tee-Object -FilePath $log
+          } else {
+            npm run test:syntax -- --ui-colors-only "--mode=$env:THEMER_STARTUP_MODE" 2>&1 |
+              Tee-Object -FilePath $log
+          }
+          $code = $LASTEXITCODE
+          "Native UI exit code: $code" | Tee-Object -FilePath $log -Append
+          if ($code -ne 0) { exit $code }
+          foreach ($mode in 'dark', 'light') {
+            if (-not (Get-Content -LiteralPath $log | Where-Object { $_ -cmatch "^PASS ${mode}:" })) {
+              throw "The focused UI runner did not report coverage for $mode."
+            }
+          }
+      - name: Upload native UI logs, including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: acceptance-native-${{ matrix.os }}-${{ matrix.startup_mode }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.ACCEPTANCE_LOG_DIR }}
+          if-no-files-found: warn
+          retention-days: 14
