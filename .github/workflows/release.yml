@@ -90,7 +90,7 @@ jobs:
           if ($env:EXACT_VERSION) { $arguments += @("--version", $env:EXACT_VERSION) }
           npx --no-install tsx tools\prepare-release.ts @arguments
           if ($LASTEXITCODE -ne 0) { throw "Release preparation failed." }
-      - name: Create a release PR and dispatch its exact required CI
+      - name: Create a release PR and request supplemental CI
         shell: pwsh
         run: |
           $plan = Get-Content artifacts\release-plan\plan.json -Raw | ConvertFrom-Json
@@ -129,15 +129,17 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or ($remote -split "\s+")[0] -ne $sha) { throw "Release branch no longer points to the prepared commit." }
           gh pr create --base main --head $branch --title "chore(release): $($plan.tag)" --body-file artifacts\release-plan\summary.md
           if ($LASTEXITCODE -ne 0) {
-            throw "PR creation failed. If Actions PR creation is disabled, a maintainer must deliberately enable 'Allow GitHub Actions to create and approve pull requests' in Settings > Actions > General > Workflow permissions. No permission is changed and no PAT or App fallback is used. The branch remains for manual recovery; no required CI is requested without its PR."
+            throw "PR creation failed. If Actions PR creation is disabled, a maintainer must deliberately enable 'Allow GitHub Actions to create and approve pull requests' in Settings > Actions > General > Workflow permissions. No permission is changed and no PAT or App fallback is used. The branch remains for manual recovery; no supplemental CI is requested without its PR."
           }
+          Write-Output "Release PR created. Owner workflow approval is pending before merging."
           $prJson = gh pr view $branch --json number,headRefOid
-          if ($LASTEXITCODE -ne 0) { throw "Cannot resolve the created release PR; required CI was not requested." }
+          if ($LASTEXITCODE -ne 0) { throw "Cannot resolve the created release PR; supplemental CI was not requested. Owner workflow approval remains pending." }
           $pr = $prJson | ConvertFrom-Json
           if ("$($pr.number)" -notmatch '^[1-9]\d*$' -or $pr.headRefOid -ne $sha) { throw "Created PR no longer has the exact prepared head." }
-          # Bot events can suppress CI or leave PR runs awaiting approval. Dispatch and verify actual required checks separately.
-          gh workflow run ci.yml --ref $branch -f "release_pr=$($pr.number)" -f "expected_sha=$sha"
+          Write-Warning "Before merging PR #$($pr.number), the owner must approve the eligible bot-triggered pull_request workflow with 'Approve workflows to run' and wait for the actual required Check (ubuntu-latest) and Check (windows-latest) results. Supplemental dispatch success does not satisfy required checks."
+          # Bot events can suppress CI or leave PR runs awaiting approval. Explicit dispatch is supplemental review only.
+          gh workflow run ci.yml --ref $branch
           if ($LASTEXITCODE -ne 0) {
-            throw "CI dispatch failed for PR #$($pr.number), $branch ($sha). The PR exists but required CI is NOT verified. Explicitly dispatch ci.yml with this release_pr and expected_sha before considering it ready."
+            throw "PR #$($pr.number) was created, but supplemental CI dispatch failed for $branch ($sha). Owner approval of the eligible pull_request workflow and its actual required checks remain pending; this is not merge readiness."
           }
-          Write-Output "Requested ci.yml for PR #$($pr.number), $branch at $sha. Only the CI attachment job's verified PR rollup proves required checks; a successful dispatched run alone does not."
+          Write-Output "Supplemental ci.yml requested for PR #$($pr.number), $branch at $sha. Preparation success means only PR creation; owner workflow approval and eligible required checks remain pending."

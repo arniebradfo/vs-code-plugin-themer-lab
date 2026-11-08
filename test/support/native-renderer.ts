@@ -1,5 +1,6 @@
 import { requireRecord, requireString } from "../../src/shared/validation";
 import type { SyntaxLine as NativeLine, SyntaxRun as NativeRun } from "../../src/syntax/evaluation";
+import { browserProcessId, focusNativeTestWindow } from "./native-focus";
 export type { SyntaxLine as NativeLine } from "../../src/syntax/evaluation";
 
 interface PendingRequest {
@@ -495,7 +496,7 @@ export class NativeRenderer {
   private readonly webviewSessions = new Map<string, string>();
   private webviewTargets = "";
 
-  private constructor(private readonly socket: WebSocket) {
+  private constructor(private readonly socket: WebSocket, private readonly browserPid?: number) {
     socket.addEventListener("message", (event: MessageEvent<unknown>) => {
       try {
         if (typeof event.data !== "string") throw new Error("Unexpected binary debugging response.");
@@ -531,6 +532,27 @@ export class NativeRenderer {
     if (!target) throw new Error("The isolated VS Code workbench debugging target was not found.");
     const url = requireString(target.webSocketDebuggerUrl, "Workbench debugging URL");
     if (!url.startsWith(`ws://127.0.0.1:${port}/`)) throw new Error("Refusing a non-loopback workbench debugging target.");
+    const browserPid = process.platform === "darwin" ? await NativeRenderer.findBrowserProcessId(port) : undefined;
+    return new NativeRenderer(await NativeRenderer.openSocket(url), browserPid);
+  }
+
+  private static async findBrowserProcessId(port: number): Promise<number> {
+    const response = await fetch(`http://127.0.0.1:${port}/json/version`, { signal: AbortSignal.timeout(10_000) });
+    if (!response.ok) throw new Error(`Cannot discover the isolated browser: HTTP ${response.status}.`);
+    const version = requireRecord(await response.json(), "Browser debugging version");
+    const url = requireString(version.webSocketDebuggerUrl, "Browser debugging URL");
+    if (!url.startsWith(`ws://127.0.0.1:${port}/devtools/browser/`)) {
+      throw new Error("Refusing a non-loopback browser debugging target.");
+    }
+    const browser = new NativeRenderer(await NativeRenderer.openSocket(url));
+    try {
+      return browserProcessId(await browser.request("SystemInfo.getProcessInfo", {}));
+    } finally {
+      browser.close();
+    }
+  }
+
+  private static async openSocket(url: string): Promise<WebSocket> {
     const socket = new WebSocket(url);
     await new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
@@ -546,7 +568,7 @@ export class NativeRenderer {
         reject(new Error("Cannot connect to the native renderer."));
       }, { once: true });
     });
-    return new NativeRenderer(socket);
+    return socket;
   }
 
   close(): void {
@@ -556,6 +578,8 @@ export class NativeRenderer {
 
   async focusWindow(): Promise<void> {
     await this.request("Page.bringToFront", {});
+    // Bringing a tab forward does not necessarily activate its macOS application.
+    await focusNativeTestWindow(this.browserPid, async () => (await this.inspect(() => document.hasFocus())) === true);
   }
 
   async snapshot(expected: string[], allowAlpha = false): Promise<NativeLine[]> {

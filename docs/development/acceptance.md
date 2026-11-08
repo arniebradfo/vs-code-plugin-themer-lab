@@ -170,6 +170,78 @@ result. Local Windows checks and unit tests do not establish hosted macOS
 GUI/focus behavior or Linux native acceptance. Blocker #6 remains open until
 the required real desktop jobs pass on the reviewed commit.
 
+## Rerun 42427670200
+
+[Rerun 42427670200](https://github.com/arniebradfo/vs-code-plugin-themer-lab/actions/runs/42427670200)
+tested `994d487f2c9840fbbb0cf774ea976b9204cffc36` on
+`fix/deployment-verification`. All three minimum-editor host jobs and both
+Windows native startup jobs passed. Four native jobs still failed:
+
+| Failed jobs | New evidence | Disposition |
+| --- | --- | --- |
+| Linux Dark `128569358242`, Light `128569358367` | Both reached 42 native PASS groups, including both modes' debugger and exact Cancel checks. The first Dark webview at 320px then failed: `autoLightness must place label, modes, help and value on one line.` | This is a real control-row geometry failure on pinned VS Code 1.143.1 / Ubuntu 24.04. It remains a #6 layout blocker. Do not change fonts, widths, CSS, or assertions to hide it in automation. |
+| macOS Dark `128569358267`, Light `128569358322` | At the initial selection capture, Quick Input was visible and the active element was its input, but `documentFocused=false` and the editor still had its `focused` class. Selection paint remained active: Dark alpha 0.87; Light alpha 0.25. The existing 15-second capture timed out. | `Page.bringToFront` did not activate the native application. The runner now discovers the isolated browser PID through its loopback browser CDP endpoint and activates that PID with AppKit before capture. |
+
+The macOS fix targets a process, not an application name, so it cannot select
+another installed Code instance by name. It requires real `document.hasFocus()`
+after native activation. Activation denial or absent focus still fails; there
+is no focus emulation, edited DOM class, or changed selection-paint assertion.
+Windows and Linux keep their existing focus path.
+
+The focus helper has five targeted unit tests. Strict type checking and the
+build passed. These tests validate PID selection, bounded native activation,
+real-focus polling, failure propagation, and unchanged non-macOS behavior.
+Actual AppKit activation cannot be verified from the Windows development
+machine. The owner must rerun the two macOS native jobs before treating that
+part of #6 as resolved. That focus-only patch did not change the Linux layout
+failure; the next section records its permitted CSS correction.
+
+## Linux 320px compact-row correction
+
+The permitted CSS correction was measured in real, isolated Linux VS Code
+1.143.1 under Ubuntu 24.04 / WSLg. It used the existing native capture and
+viewport code, not a browser mock or emulated focus. The unmodified native
+font lists were `system-ui, Ubuntu, "Droid Sans", sans-serif` and
+`"Droid Sans Mono", monospace`; the stock system resolved these to DejaVu Sans
+and DejaVu Sans Mono.
+
+The original native run reproduced the exact CI `autoLightness` error.
+Its 320px viewport had a 305px client width because of the real 15px scrollbar.
+Existing panel padding and borders left a 251px heading. This was horizontal
+overlap, not a wrapped label: all four controls had the same vertical center.
+The 59.609px `UI linked` value remained right-aligned.
+
+| Dark Auto geometry at 320px | Original | Fixed |
+| --- | ---: | ---: |
+| Heading width | 251px | 251px |
+| Options box width | 183.391px | 189.234px |
+| Segmented-control width | 121.781px | 107.781px |
+| Help right edge | 234.234px | 216.234px |
+| Value left edge | 218.391px | 218.391px |
+| Help/value gap | -15.843px | 2.157px |
+| Required row budget | 274.843px | 250.843px |
+
+Only syntax-adjustment rows in panels up to 279px use tighter decorative
+spacing. Button height, font sizes, values, radio behavior, and slider behavior
+stay unchanged. The minimum radio width remains 24px; the measured smallest
+Linux button is 24.25px by 24px.
+
+The new regression checks the measured row budget, usable target sizes, and
+unchanged wide spacing/fonts. Both targeted tests, strict type checking, and
+the build passed. Thirty native measurements covered Dark/Light and
+Auto/Manual/Off at the unchanged 320, 400, 540, 800, and 1200px widths.
+Every layout error list was empty; all controls remained enabled and Manual
+sliders appeared only in Manual mode. All 24 records above 320px had exactly
+the original control geometry.
+Both pinned Windows 1.143.1 native startup runs also passed all 56 groups after
+the CSS correction, with the existing acceptance assertions unchanged.
+
+This resolves the reproduced compact-row defect, not every hosted Linux
+acceptance requirement. The release owner must still run the full Linux
+acceptance jobs. Other font installations/locales were not tested. The
+PID-targeted macOS activation patch remains unchanged and still needs its
+hosted native rerun.
+
 These owner acceptance gaps remain unverified:
 
 - Restricted Mode and workspace trust prompts. Existing isolated tests disable
