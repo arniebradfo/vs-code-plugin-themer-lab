@@ -193,7 +193,54 @@ build passed. These tests validate PID selection, bounded native activation,
 real-focus polling, failure propagation, and unchanged non-macOS behavior.
 Actual AppKit activation cannot be verified from the Windows development
 machine. The owner must rerun the two macOS native jobs before treating that
-part of #6 as resolved. The Linux layout failure remains unresolved.
+part of #6 as resolved. That focus-only patch did not change the Linux layout
+failure; the next section records its permitted CSS correction.
+
+## Linux 320px compact-row correction
+
+The permitted CSS correction was measured in real, isolated Linux VS Code
+1.143.1 under Ubuntu 24.04 / WSLg. It used the existing native capture and
+viewport code, not a browser mock or emulated focus. The unmodified native
+font lists were `system-ui, Ubuntu, "Droid Sans", sans-serif` and
+`"Droid Sans Mono", monospace`; the stock system resolved these to DejaVu Sans
+and DejaVu Sans Mono.
+
+The original native run reproduced the exact CI `autoLightness` error.
+Its 320px viewport had a 305px client width because of the real 15px scrollbar.
+Existing panel padding and borders left a 251px heading. This was horizontal
+overlap, not a wrapped label: all four controls had the same vertical center.
+The 59.609px `UI linked` value remained right-aligned.
+
+| Dark Auto geometry at 320px | Original | Fixed |
+| --- | ---: | ---: |
+| Heading width | 251px | 251px |
+| Options box width | 183.391px | 189.234px |
+| Segmented-control width | 121.781px | 107.781px |
+| Help right edge | 234.234px | 216.234px |
+| Value left edge | 218.391px | 218.391px |
+| Help/value gap | -15.843px | 2.157px |
+| Required row budget | 274.843px | 250.843px |
+
+Only syntax-adjustment rows in panels up to 279px use tighter decorative
+spacing. Button height, font sizes, values, radio behavior, and slider behavior
+stay unchanged. The minimum radio width remains 24px; the measured smallest
+Linux button is 24.25px by 24px.
+
+The new regression checks the measured row budget, usable target sizes, and
+unchanged wide spacing/fonts. Both targeted tests, strict type checking, and
+the build passed. Thirty native measurements covered Dark/Light and
+Auto/Manual/Off at the unchanged 320, 400, 540, 800, and 1200px widths.
+Every layout error list was empty; all controls remained enabled and Manual
+sliders appeared only in Manual mode. All 24 records above 320px had exactly
+the original control geometry.
+Both pinned Windows 1.143.1 native startup runs also passed all 56 groups after
+the CSS correction, with the existing acceptance assertions unchanged.
+
+This resolves the reproduced compact-row defect, not every hosted Linux
+acceptance requirement. The release owner must still run the full Linux
+acceptance jobs. Other font installations/locales were not tested. The
+PID-targeted macOS activation patch remains unchanged and still needs its
+hosted native rerun.
 
 These owner acceptance gaps remain unverified:
 

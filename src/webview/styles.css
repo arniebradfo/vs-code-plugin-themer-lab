@@ -1461,6 +1461,23 @@ input[type="range"]::-webkit-slider-thumb {
   }
 }
 
+@container panel (max-width: 279px) {
+  .syntax-adjustments .syntax-mode-heading,
+  .syntax-adjustments .syntax-mode-options {
+    gap: 2px;
+  }
+
+  .syntax-adjustments .segmented-control {
+    gap: 0;
+    padding-inline: 0;
+  }
+
+  .syntax-adjustments .segment span {
+    min-width: 24px;
+    padding-inline: 3px;
+  }
+}
+
 @container panel (min-width: 280px) {
   .syntax-color-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
