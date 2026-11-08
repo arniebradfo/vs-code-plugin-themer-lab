@@ -12,6 +12,7 @@ source repository did not grant a project license.
 ```text
 Merge feature/fix PRs -> required Windows/Linux CI
     -> request a version/changelog PR from Prepare release
+    -> owner approves the eligible bot PR workflow -> required CI
     -> review and merge that PR
     -> Actions checks and retains one exact VSIX
     -> protected Marketplace publication
@@ -23,13 +24,16 @@ Ordinary merges and dependency updates do not publish the extension. The
 publishing workflow detects an advance in the extension's own version.
 It does not publish merely because a dependency or workflow changed.
 
-The release workflow prepares PRs; it does not publish, tag, or create GitHub
-releases. Required CI is explicitly dispatched for bot-created branches.
-`GITHUB_TOKEN` pushes do not normally start another workflow. Bot-created PR
-events can also require approval before their workflows run. Explicit dispatch
-starts CI without a stored personal token or an extra GitHub App, but its native
-job checks **do not satisfy required PR checks**. The CI attachment path below
-must verify the actual app-bound checks in the latest PR head's rollup.
+The release workflow prepares PRs; it does not publish, tag, approve workflows,
+merge PRs, or create GitHub releases. **Preparation success means only that the
+PR was created.** Owner workflow approval and actual required checks remain
+pending before merging.
+
+`GITHUB_TOKEN` pushes do not normally start another workflow. Bot-triggered PR
+workflows can require approval before running. Prepare release explicitly
+dispatches **supplemental CI** for review, but dispatch success does not satisfy
+the required PR checks. The owner must approve the eligible `pull_request`
+workflow and verify its actual results.
 
 ## What still needs the owner
 
@@ -146,53 +150,40 @@ Run success and REST check-run success alone are not merge-readiness evidence.
 For example, deployment-free PR #20 had successful native checks at its exact
 head, but an empty PR rollup and an approval-required `pull_request` run.
 
-Prepare release now opens the PR before dispatching CI with `release_pr` and
-`expected_sha`. Ordinary manual CI runs can omit those two inputs; their native
-job results are review evidence, not required-check proof.
+The supported flow with the current `GITHUB_TOKEN` policy is:
 
-For a bot release PR, CI:
+1. Prepare release creates the PR and explicitly dispatches supplemental CI
+   on its branch. Its PR body contains an unchecked owner-approval checklist.
+   CI has no release-specific dispatch inputs or custom check-reporting jobs.
+2. The owner opens the bot PR and selects **Approve workflows to run** for
+   the eligible bot-triggered `pull_request` workflow. Preparation does not
+   perform that approval and never marks it complete.
+3. Wait for actual `Check (ubuntu-latest)` and `Check (windows-latest)` success
+   from the eligible workflow at the latest head/applicable test-merge commit.
+   Preserve the GitHub Actions app binding (`15368`) and verify the source,
+   rather than trusting a green supplemental run.
+4. Review the version/changelog and merge only when those required checks and
+   every other main protection, including the up-to-date requirement, pass.
 
-1. Uses isolated, trusted `main` check-reporting jobs. Only these jobs receive
-   job-scoped `checks: write` plus read access to contents and Actions. They do
-   not execute PR code or dependency install scripts. The test jobs stay read-only.
-2. Verifies the bot PR, exact source/attempt, same repository, protected-main
-   ancestry, and the single preparation commit. The shared release planner must
-   reproduce its manifests and changelog; script, dependency, license, publisher,
-   and unrelated content changes are rejected.
-3. Starts both required Checks API checks **in progress** and verifies their
-   opaque IDs in the PR rollup before running the native Windows/Linux jobs.
-4. Reads the actual completed native jobs and check runs for this attempt.
-   Successful conclusions require the real type/test/build, audit, and Windows
-   package-inspection/upload steps to pass. Missing, unfinished, mismatched,
-   skipped, or neutral validation cannot produce a successful required check.
-5. Updates only this attempt's checks from those verified results, linking the
-   real job logs. REST responses must retain the source SHA, context names, and
-   GitHub Actions app ID `15368`. The same IDs must appear completed with the
-   actual conclusions in the latest-head PR rollup, and GitHub must classify
-   each as required for this PR.
+For read-only verification, use `gh pr checks <number> --required` and
+`gh pr view <number> --json headRefOid,statusCheckRollup`. Neither a successful
+dispatch nor direct REST/GraphQL check presence alone completes the pending step.
 
-The protected contexts remain `Check (ubuntu-latest)` and
-`Check (windows-latest)`, bound to GitHub Actions. Native dispatched jobs use
-`Native CI (...)` to avoid confusing them with the reported required checks.
-No manual success status, workflow approval, PAT, additional App, or protection
-change is used. The existing `GITHUB_TOKEN` is an
-[installation token](https://docs.github.com/en/actions/concepts/security/github_token)
-for the built-in App; reporting uses the
-[Checks API](https://docs.github.com/en/rest/checks/runs).
+Deployment-free [PR #20](https://github.com/arniebradfo/vs-code-plugin-themer-lab/pull/20)
+and [PR #22](https://github.com/arniebradfo/vs-code-plugin-themer-lab/pull/22)
+confirmed the dispatch association boundary, including Checks API checks created
+by the built-in token. That always-failing attestation experiment, its write role,
+and its helper have been removed. No success-shaped check/status fallback,
+automatic approval, PAT, App credentials, secrets, or protection change is added.
 
-**Verify hosted attachment before treating this path as unattended.** If GitHub
-rejects reporting or does not expose the exact checks in the rollup within the
-bounded wait, CI fails and does not claim required checks passed. Do not weaken
-the app binding or replace missing checks with ad-hoc successes. Owner-approved
-PR workflows remain a separate recovery option if the platform blocks attachment.
-Do not infer readiness from the green native jobs or a dispatched-run URL.
-
-For read-only verification, check `gh pr checks <number> --required` and
-`gh pr view <number> --json headRefOid,statusCheckRollup`. Both required contexts
-must have actual successful results at that latest head. Other main protections,
-including the up-to-date requirement, still apply. A retry must rerun **all** CI
-jobs or dispatch a fresh CI run with the same PR number and exact head; old
-attempts or a failed reporter-only rerun cannot supply a new success.
+Fully unattended release-PR CI under the current policy needs an
+**owner-configured supported GitHub App or automation identity later**, tracked
+in [#11](https://github.com/arniebradfo/vs-code-plugin-themer-lab/issues/11).
+That identity must generate eligible PR workflows whose real results satisfy the
+required name, app, and commit binding. Setup and hosted validation are a separate
+owner decision; this infrastructure does not add credentials or relax the current
+binding. The immutable publisher pipeline and Marketplace approval policy remain
+unchanged.
 
 ## Review a package without publishing
 

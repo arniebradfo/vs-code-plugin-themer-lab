@@ -296,6 +296,23 @@ test("CLI write changes only fixture metadata, preserves JSON formatting, and re
   });
 });
 
+test("review and PR summaries keep owner approval pending and label dispatched CI as supplemental", async () => {
+  for (const mode of ["--dry-run", "--write"]) await withFixture(async (directory) => {
+    const result = runCli(directory, ["--bump=initial", mode]);
+    assert.equal(result.status, 0, result.stderr);
+    const summary = await readFile(path.join(directory, "artifacts", "release-plan", "summary.md"), "utf8");
+    assert.match(summary, /Preparation success means only PR creation/);
+    assert.match(summary, /Supplemental dispatch success does not satisfy required checks/);
+    assert.match(summary, /- \[ \] Owner: approve the eligible bot-triggered pull_request workflow/);
+    assert.match(summary, /Approve workflows to run/);
+    assert.match(summary, /Check \(ubuntu-latest\).*Check \(windows-latest\)/);
+    assert.match(summary, /retaining the GitHub Actions app binding/);
+    assert.match(summary, /owner-configured supported GitHub App\/identity later, tracked in #11/);
+    assert.doesNotMatch(summary, /- \[x\]|CI reports verified|attachment job|isRequired/);
+    assert.match(result.stdout, /Required owner action before merging/);
+  });
+});
+
 test("invalid CLI plans fail before writing artifacts or source changes", async () => {
   await withFixture(async (directory) => {
     const before = await readFile(path.join(directory, "CHANGELOG.md"), "utf8");
@@ -349,7 +366,10 @@ test("manual workflow is dry-run-first, job-scoped, pinned, duplicate-safe, and 
   assert.match(workflow, /gh workflow run ci\.yml --ref \$branch/);
   assert.match(workflow, /suppress CI or leave PR runs awaiting approval/);
   assert.ok(workflow.indexOf("\n          gh pr create ") < workflow.indexOf("\n          gh workflow run ci.yml"));
-  assert.match(workflow, /-f "release_pr=\$\(\$pr.number\)" -f "expected_sha=\$sha"/);
+  assert.doesNotMatch(workflow, /release_pr|expected_sha|checks: write|statuses: write|attachment job/);
+  assert.match(workflow, /the owner must approve the eligible bot-triggered pull_request workflow/);
+  assert.match(workflow, /Supplemental dispatch success does not satisfy required checks/);
+  assert.match(workflow, /Preparation success means only PR creation/);
   assert.match(workflow, /Release branch no longer points to the prepared commit/);
   assert.doesNotMatch(workflow, /--force(?:-with-lease)?\b|git tag\b|gh release create|vsce publish|secrets\./);
 });
@@ -399,6 +419,7 @@ function git {
 }
 $failed = $false
 $message = ""
+$output = @()
 try {
   $output = @(& {
 `;
@@ -409,7 +430,7 @@ try {
         const script = `${harness}\n${scripts[1]}\n${scripts[3]}\n` + String.raw`
   } 3>&1)
 } catch { $failed = $true; $message = $_.Exception.Message }
-[pscustomobject]@{ failed = $failed; message = $message; calls = @($global:Calls) } | ConvertTo-Json -Depth 4 -Compress
+[pscustomobject]@{ failed = $failed; message = $message; calls = @($global:Calls); output = @($output | ForEach-Object { "$_" }) } | ConvertTo-Json -Depth 4 -Compress
 `;
         const result = spawnSync("pwsh", ["-NoProfile", "-NonInteractive", "-Command", script], {
           cwd: directory,
@@ -423,20 +444,41 @@ try {
           }
         });
         assert.equal(result.status, 0, result.stderr);
-        const outcome = JSON.parse(result.stdout) as { failed: boolean; message: string; calls: string[] };
+        const outcome = JSON.parse(result.stdout) as { failed: boolean; message: string; calls: string[]; output: string[] };
         assert.equal(outcome.failed, mode !== "success", `${mode}: ${outcome.message}`);
         const pushed = outcome.calls.some((call) => call.startsWith("git push "));
-        const dispatched = outcome.calls.findIndex((call) => call === "gh workflow run ci.yml --ref release/v0.1.0 -f release_pr=20 -f expected_sha=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        const dispatched = outcome.calls.findIndex((call) => call === "gh workflow run ci.yml --ref release/v0.1.0");
         const opened = outcome.calls.findIndex((call) => call.startsWith("gh pr create "));
         assert.equal(pushed, ["permission", "moved", "ci-failure", "pr-failure", "head-change", "success"].includes(mode), mode);
         assert.equal(dispatched >= 0, ["ci-failure", "success"].includes(mode), mode);
         assert.equal(opened >= 0, ["permission", "ci-failure", "pr-failure", "head-change", "success"].includes(mode), mode);
         if (dispatched >= 0) assert.ok(opened < dispatched);
         if (mode === "permission") assert.match(outcome.message, /a maintainer must deliberately enable 'Allow GitHub Actions to create and approve pull requests'/);
-        if (mode === "ci-failure") assert.match(outcome.message, /PR exists but required CI is NOT verified/);
+        if (mode === "ci-failure") assert.match(outcome.message, /was created, but supplemental CI dispatch failed.*remain pending/);
+        if (mode === "success") {
+          const output = outcome.output.join("\n");
+          assert.match(output, /the owner must approve the eligible bot-triggered pull_request workflow/);
+          assert.match(output, /Supplemental dispatch success does not satisfy required checks/);
+          assert.match(output, /Preparation success means only PR creation/);
+          assert.match(output, /owner workflow approval and eligible required checks remain pending/);
+          assert.ok(outcome.calls.every((call) => !/approve|check-runs|statuses/.test(call)));
+        }
       }
     });
   });
+
+test("ordinary CI keeps the protected matrix names and has no attestation dependency or write role", async () => {
+  const ci = await readFile(path.join(root, ".github", "workflows", "ci.yml"), "utf8");
+  assert.match(ci, /^  pull_request:\r?\n  workflow_dispatch:\r?\n/m);
+  assert.match(ci, /^permissions:\r?\n  contents: read\r?\n/m);
+  assert.match(ci, /^  check:\r?\n    name: Check \(\$\{\{ matrix\.os \}\}\)/m);
+  assert.match(ci, /os: \[ubuntu-latest, windows-latest\]/);
+  assert.match(ci, /npm run check/);
+  assert.match(ci, /npm audit --audit-level=high/);
+  assert.match(ci, /Inspect the actual review package/);
+  assert.match(ci, /--commit \$env:GITHUB_SHA/);
+  assert.doesNotMatch(ci, /release_pr|expected_sha|release-pr-checks|checks: write|statuses: write|begin_release|attach_release|Native CI|needs:/);
+});
 
 test("repository metadata supports manual review without weakening exact release validation", async () => {
   const manifest = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
