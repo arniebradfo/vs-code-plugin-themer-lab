@@ -9,7 +9,7 @@ import { activeItemTargets, statefulStatusColors, tintOverlay } from "../src/mod
 import { opacityFor, supplementalModernColors } from "../src/model/rules";
 import { references } from "../src/shared/reference";
 import { editorSamples } from "../src/shared/samples";
-import { requireRecord } from "../src/shared/validation";
+import { parseThemeMode, requireRecord, requireString } from "../src/shared/validation";
 import { infoSources, previewThemeNames, syntaxAdjustmentModes, syntaxFamilies, syntaxPaletteModes, themeModes } from "../src/shared/types";
 import { previewScope } from "../src/extension/preview";
 import { fitSyntaxModel, renderResolvedSyntaxColor } from "../src/syntax";
@@ -139,7 +139,18 @@ export async function run(): Promise<void> {
     await workbench.update("editor.decorations.badges", true, vscode.ConfigurationTarget.Workspace);
     await problems.update("decorations.enabled", true, vscode.ConfigurationTarget.Workspace);
     await editorConfiguration.update("scrollbar.vertical", "visible", vscode.ConfigurationTarget.Workspace);
+    const startupMode = parseThemeMode(process.env.THEMER_THEME_MODE ?? "dark");
+    const startupReference = references[startupMode];
+    // Select the requested native theme before capturing the exact Cancel baseline.
+    await workbench.update("colorTheme", references[startupMode === "dark" ? "light" : "dark"].theme.id, vscode.ConfigurationTarget.Global);
+    await workbench.update("colorTheme", startupReference.theme.id, vscode.ConfigurationTarget.Global);
+    await waitFor(() => vscode.window.activeColorTheme.kind ===
+      (startupMode === "dark" ? vscode.ColorThemeKind.Dark : vscode.ColorThemeKind.Light), `${startupMode} native startup theme`);
     const original = await selectAndBlur();
+    for (const id of ["foreground", "editor.background", "editor.foreground"]) {
+      assert.equal(hex(original.colors[id] ?? ""), hex(requireString(startupReference.colors[id]?.value, `Native startup ${id}`)),
+        `${startupMode}: the Cancel baseline must use the requested native theme.`);
+    }
     for (const mode of themeModes) {
       const reference = references[mode];
       await testing.setMode(mode);

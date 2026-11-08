@@ -38,7 +38,8 @@ jobs:
       - name: Set workspace-local scratch and log paths
         run: |
           $logs = Join-Path (Join-Path $env:GITHUB_WORKSPACE 'artifacts') 'acceptance-logs'
-          $scratch = Join-Path (Join-Path $env:GITHUB_WORKSPACE '.vscode-test') 'acceptance-scratch'
+          # Extra scratch subdirectories exceed macOS main/debugger IPC path limits.
+          $scratch = $env:GITHUB_WORKSPACE
           New-Item -ItemType Directory -Force $logs, $scratch | Out-Null
           "ACCEPTANCE_LOG_DIR=$logs", "TMPDIR=$scratch", "TEMP=$scratch", "TMP=$scratch" |
             Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
@@ -127,7 +128,8 @@ jobs:
       - name: Set workspace-local scratch and log paths
         run: |
           $logs = Join-Path (Join-Path $env:GITHUB_WORKSPACE 'artifacts') 'acceptance-logs'
-          $scratch = Join-Path (Join-Path $env:GITHUB_WORKSPACE '.vscode-test') 'acceptance-scratch'
+          # Extra scratch subdirectories exceed macOS main/debugger IPC path limits.
+          $scratch = $env:GITHUB_WORKSPACE
           New-Item -ItemType Directory -Force $logs, $scratch | Out-Null
           "ACCEPTANCE_LOG_DIR=$logs", "TMPDIR=$scratch", "TEMP=$scratch", "TMP=$scratch" |
             Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { appendFile, mkdir, readFile, realpath } from "node:fs/promises";
+import { access, appendFile, mkdir, readFile, readdir, realpath } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { downloadAndUnzipVSCode, type DownloadOptions } from "@vscode/test-electron";
@@ -17,6 +17,7 @@ interface PrepareOptions {
 interface PrepareServices {
   root?: string;
   env?: NodeJS.ProcessEnv;
+  platform?: NodeJS.Platform;
   download?: (options: Partial<DownloadOptions>) => Promise<string>;
 }
 
@@ -53,6 +54,39 @@ export function editorAppDirectory(executable: string, platform = process.platfo
     : path.join(path.dirname(executable), "resources", "app");
 }
 
+export async function resolveEditorAppDirectory(executable: string, platform = process.platform): Promise<string> {
+  const archive = await realpath(platform === "darwin"
+    ? path.resolve(path.dirname(executable), "..", "..")
+    : path.dirname(executable));
+  const candidates = [editorAppDirectory(executable, platform)];
+  if (platform === "win32") {
+    for (const entry of await readdir(archive, { withFileTypes: true })) {
+      if (entry.isDirectory() && /^[a-f0-9]{10}$/.test(entry.name)) {
+        candidates.push(path.join(archive, entry.name, "resources", "app"));
+      }
+    }
+  }
+  const found: string[] = [];
+  for (const candidate of candidates) {
+    try {
+      const app = await realpath(candidate);
+      const relative = path.relative(archive, app);
+      if (relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+        throw new Error("Editor resources must stay inside the isolated downloaded archive.");
+      }
+      await access(path.join(app, "package.json"));
+      await access(path.join(app, "product.json"));
+      found.push(app);
+    } catch (error) {
+      if (!["ENOENT", "ENOTDIR"].includes((error as NodeJS.ErrnoException).code ?? "")) throw error;
+    }
+  }
+  if (found.length !== 1) {
+    throw new Error(`Expected one isolated editor resources directory; found ${found.length}. Windows archives may use a ten-character commit directory. No editor path was exported.`);
+  }
+  return found[0]!;
+}
+
 export function assertNativeSources(actual: ReferenceTheme, pinned: ReferenceTheme): void {
   assert.deepEqual(actual.theme, pinned.theme, `${pinned.theme.id} theme metadata must match the pinned fixture.`);
   assert.deepEqual(actual.sources, pinned.sources,
@@ -83,7 +117,7 @@ export async function prepareTestEditor(options: PrepareOptions, services: Prepa
   if (/[\r\n\0]/.test(actualExecutable)) {
     throw new Error("The editor executable path cannot contain environment-file control characters.");
   }
-  const app = editorAppDirectory(actualExecutable);
+  const app = await resolveEditorAppDirectory(actualExecutable, services.platform);
   const appPackage = requireRecord(JSON.parse(await readFile(path.join(app, "package.json"), "utf8")), "Editor package");
   const product = requireRecord(JSON.parse(await readFile(path.join(app, "product.json"), "utf8")), "Editor product");
   const actualVersion = requireString(product.version ?? appPackage.version, "Downloaded editor version");
