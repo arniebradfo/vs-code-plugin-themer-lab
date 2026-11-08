@@ -170,6 +170,31 @@ result. Local Windows checks and unit tests do not establish hosted macOS
 GUI/focus behavior or Linux native acceptance. Blocker #6 remains open until
 the required real desktop jobs pass on the reviewed commit.
 
+## Rerun 42427670200
+
+[Rerun 42427670200](https://github.com/arniebradfo/vs-code-plugin-themer-lab/actions/runs/42427670200)
+tested `994d487f2c9840fbbb0cf774ea976b9204cffc36` on
+`fix/deployment-verification`. All three minimum-editor host jobs and both
+Windows native startup jobs passed. Four native jobs still failed:
+
+| Failed jobs | New evidence | Disposition |
+| --- | --- | --- |
+| Linux Dark `128569358242`, Light `128569358367` | Both reached 42 native PASS groups, including both modes' debugger and exact Cancel checks. The first Dark webview at 320px then failed: `autoLightness must place label, modes, help and value on one line.` | This is a real control-row geometry failure on pinned VS Code 1.143.1 / Ubuntu 24.04. It remains a #6 layout blocker. Do not change fonts, widths, CSS, or assertions to hide it in automation. |
+| macOS Dark `128569358267`, Light `128569358322` | At the initial selection capture, Quick Input was visible and the active element was its input, but `documentFocused=false` and the editor still had its `focused` class. Selection paint remained active: Dark alpha 0.87; Light alpha 0.25. The existing 15-second capture timed out. | `Page.bringToFront` did not activate the native application. The runner now discovers the isolated browser PID through its loopback browser CDP endpoint and activates that PID with AppKit before capture. |
+
+The macOS fix targets a process, not an application name, so it cannot select
+another installed Code instance by name. It requires real `document.hasFocus()`
+after native activation. Activation denial or absent focus still fails; there
+is no focus emulation, edited DOM class, or changed selection-paint assertion.
+Windows and Linux keep their existing focus path.
+
+The focus helper has five targeted unit tests. Strict type checking and the
+build passed. These tests validate PID selection, bounded native activation,
+real-focus polling, failure propagation, and unchanged non-macOS behavior.
+Actual AppKit activation cannot be verified from the Windows development
+machine. The owner must rerun the two macOS native jobs before treating that
+part of #6 as resolved. The Linux layout failure remains unresolved.
+
 These owner acceptance gaps remain unverified:
 
 - Restricted Mode and workspace trust prompts. Existing isolated tests disable
