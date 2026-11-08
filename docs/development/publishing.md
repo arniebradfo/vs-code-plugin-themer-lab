@@ -176,6 +176,14 @@ by the built-in token. That always-failing attestation experiment, its write rol
 and its helper have been removed. No success-shaped check/status fallback,
 automatic approval, PAT, App credentials, secrets, or protection change is added.
 
+**The owner-approval gate is verified.** The owner approved only PR #22's original
+[`pull_request` run `42428879687`](https://github.com/arniebradfo/vs-code-plugin-themer-lab/actions/runs/42428879687),
+after verifying head `122139d0e3b19cbdf9a93a9536e504de82b76852` and the three
+version/changelog metadata files. Both eligible `Check (os)` jobs passed.
+The PR rollup contained those successful checks and `mergeStateStatus` became
+`CLEAN`. No version was merged or deployed. This proves the explicit manual gate,
+not dispatch-only readiness; each new bot PR still needs its own approval.
+
 Fully unattended release-PR CI under the current policy needs an
 **owner-configured supported GitHub App or automation identity later**, tracked
 in [#11](https://github.com/arniebradfo/vs-code-plugin-themer-lab/issues/11).
