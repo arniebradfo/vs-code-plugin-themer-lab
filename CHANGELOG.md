@@ -16,3 +16,4 @@ Marketplace release.
 - Exact-source review candidates, automated VSIX inspection, checksums, and
   safe Marketplace/GitHub release reconciliation. Publishing remains disabled.
 - Opt-in isolated native release acceptance and documented owner launch gates.
+- MIT license for the project's original code, with third-party notices retained.

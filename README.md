@@ -176,5 +176,8 @@ reference capture, packaging, and publishing prerequisites. The
 [technical reference](docs/development/reference.md) retains the detailed color
 model, syntax behavior, and recovery contracts.
 
-See [third-party notices](THIRD_PARTY_NOTICES.md) for theme-data and dependency
-attributions.
+## License
+
+Themer Lab's original code is available under the [MIT License](LICENSE).
+Third-party components retain their own licenses; see
+[third-party notices](THIRD_PARTY_NOTICES.md) for terms and attributions.

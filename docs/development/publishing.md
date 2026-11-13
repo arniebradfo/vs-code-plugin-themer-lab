@@ -3,9 +3,9 @@
 [Issue #11](https://github.com/arniebradfo/vs-code-plugin-themer-lab/issues/11)
 coordinates the first Marketplace launch and automatic updates.
 
-**Publishing is disabled.** The package still uses `themer-local`, `UNLICENSED`,
-and version `0.1.0`. Review packages are not public releases. Creating the public
-source repository did not grant a project license.
+**Publishing is disabled.** The package still uses the placeholder publisher
+`themer-local` and version `0.1.0`. The project's original code is licensed under
+[MIT](../../LICENSE). Review packages are not Marketplace releases.
 
 ## Release path
 
@@ -37,13 +37,13 @@ workflow and verify its actual results.
 
 ## What still needs the owner
 
-### Approve the license and publication rights
+### Confirm publication rights
 
-Choose the license for the original code and confirm the right to distribute it.
-Add the approved, nonempty text as root `LICENSE`. Update the manifest and
-lockfile license metadata. Retain the third-party notices and packaged license
-texts. Default theme data and runtime dependencies use MIT; Codicons artwork
-uses CC BY 4.0.
+The project's original code uses the [MIT License](../../LICENSE), with matching
+manifest and lockfile metadata. Confirm the right to publish the code and assets
+under their applicable terms. Retain the third-party notices and packaged
+license texts. Default theme data and runtime dependencies use MIT; Codicons
+artwork uses CC BY 4.0.
 
 ### Choose and configure the Marketplace publisher
 

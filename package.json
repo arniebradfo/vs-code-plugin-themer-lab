@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "publisher": "themer-local",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/arniebradfo/vs-code-plugin-themer-lab.git"

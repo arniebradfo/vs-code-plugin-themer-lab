@@ -653,7 +653,7 @@ test("VSIX rejects SVG declared icons and SVG README image URLs", async () => {
   });
 });
 
-test("VSIX checker accepts actual VSCE icon metadata and full-SHA screenshot rewrites", async () => {
+test("VSIX checker accepts actual VSCE license/icon metadata and full-SHA screenshot rewrites", async () => {
   await withFixture(async (fixture) => {
     if (typeof fixture.source.icon === "string") fixture.files.delete(`extension/${fixture.source.icon.replace(/^\.\//, "")}`);
     fixture.source.icon = "./assets/icon.png";
@@ -661,6 +661,7 @@ test("VSIX checker accepts actual VSCE icon metadata and full-SHA screenshot rew
     fixture.files.set("extension/package.json", Buffer.from(JSON.stringify(fixture.source)));
     fixture.files.set("extension/assets/icon.png", pngFixture);
     fixture.files.set("extension/assets/screenshots/dark.png", pngFixture);
+    fixture.files.set("extension/LICENSE", Buffer.from("Approved project license fixture.\n"));
     fixture.files.set("extension/readme.md", Buffer.from("# Review\n\n![Dark screenshot](assets/screenshots/dark.png)\n"));
     const sourceRoot = fixture.options.root;
     assert.ok(sourceRoot);
@@ -671,9 +672,10 @@ test("VSIX checker accepts actual VSCE icon metadata and full-SHA screenshot rew
       await writeFile(destination, content);
     }
     await createVSIX({
-      cwd: sourceRoot, packagePath: fixture.options.vsix, dependencies: false, skipLicense: true, githubBranch: commit
+      cwd: sourceRoot, packagePath: fixture.options.vsix, dependencies: false, githubBranch: commit
     });
     const manifest = await checkVsix(fixture.options);
+    assert.ok(manifest.files.includes("extension/LICENSE.txt"));
     assert.ok(manifest.files.includes("extension/assets/icon.png"));
     assert.ok(manifest.files.includes("extension/assets/screenshots/dark.png"));
     const zip = await fromBufferPromise(await readFile(fixture.options.vsix), { autoClose: false });

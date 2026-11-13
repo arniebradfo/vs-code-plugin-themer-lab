@@ -211,9 +211,9 @@ are allowed when referenced by the manifest icon or packaged README, including
 GitHub image links rewritten by VSCE. Their raster signatures are checked;
 SVG image assets, unreferenced images, source files, and maps remain excluded.
 A declared icon must be packaged and linked by the VSIX XML manifest.
-If the source has `LICENSE`, the archive must
-include the same nonempty bytes. Local review builds can still use the
-placeholder publisher without a project license.
+If the source has `LICENSE`, the archive must include the same nonempty bytes
+(VSCE names the packaged file `LICENSE.txt`). Local review builds can still use the
+placeholder publisher; they include the project's [MIT License](../../LICENSE).
 
 The JSON output contains `schemaVersion: 1`, `commit`, `version`, `extensionId`,
 `packageName`, `sha256`, and sorted `files` (full ZIP member paths, excluding
@@ -250,9 +250,9 @@ policy before it can authenticate with OIDC. The unit tests verify that the
 installed CLI exposes the required option. No publishing token is stored in
 source or needed as a GitHub secret.
 
-`npm run package` still permits an unlicensed local review build. That is not
-release approval or a license grant. `npm run check:release` intentionally
-fails until the publisher and project license are configured.
+`npm run package` permits the local placeholder publisher and includes the
+project license. That is not Marketplace release approval.
+`npm run check:release` remains blocked until a real publisher is configured.
 
 ## Official references
 
