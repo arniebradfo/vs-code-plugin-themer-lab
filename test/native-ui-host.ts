@@ -38,7 +38,7 @@ async function waitFor(predicate: () => boolean, label: string): Promise<void> {
 
 export async function run(): Promise<void> {
   assert.equal(process.env.THEMER_SYNTAX_ISOLATED, "1");
-  const extension = vscode.extensions.getExtension<ThemerApi>("themer-local.themer-lab");
+  const extension = vscode.extensions.getExtension<ThemerApi>("arniebradfo.themer-lab");
   assert.ok(extension);
   const api = await extension.activate();
   const testing = api.testing;

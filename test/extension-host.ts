@@ -23,7 +23,7 @@ async function waitFor(predicate: () => boolean, label: string): Promise<void> {
 }
 
 export async function run(): Promise<void> {
-  const extension = vscode.extensions.getExtension<ThemerApi>("themer-local.themer-lab");
+  const extension = vscode.extensions.getExtension<ThemerApi>("arniebradfo.themer-lab");
   assert.ok(extension, "Development extension must be registered.");
   const api = await extension.activate();
   const testing = api.testing;

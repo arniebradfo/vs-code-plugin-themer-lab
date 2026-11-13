@@ -3,8 +3,8 @@
 [Issue #11](https://github.com/arniebradfo/vs-code-plugin-themer-lab/issues/11)
 coordinates the first Marketplace launch and automatic updates.
 
-**Publishing is disabled.** The package still uses the placeholder publisher
-`themer-local` and version `0.1.0`. The project's original code is licensed under
+**Publishing is disabled.** The package uses publisher `arniebradfo` and version
+`0.1.0`. The project's original code is licensed under
 [MIT](../../LICENSE). Review packages are not Marketplace releases.
 
 ## Release path
@@ -45,20 +45,19 @@ under their applicable terms. Retain the third-party notices and packaged
 license texts. Default theme data and runtime dependencies use MIT; Codicons
 artwork uses CC BY 4.0.
 
-### Choose and configure the Marketplace publisher
+### Configure the Marketplace publisher connection
 
-Sign in to [publisher management](https://marketplace.visualstudio.com/manage).
-Create or select a publisher and confirm its exact identifier. A GitHub username
-does not reserve a matching Marketplace publisher.
+The owner has selected the existing
+[`arniebradfo` publisher](https://marketplace.visualstudio.com/manage/publishers/arniebradfo).
+The manifest and native test hosts use extension ID `arniebradfo.themer-lab`.
+Creating the publisher does not configure Trusted Publishing; complete the
+[secretless publishing setup](#configure-secretless-publishing) below.
 
-Update `publisher` and the identity assertion in
-[the branding test](../../test/branding.test.ts). Keep the extension name
-`themer-lab` unless deliberately choosing a different extension identity.
-
-The public extension ID will be `<publisher>.themer-lab`. It has separate
-extension storage from the local-publisher build. Restore or keep unfinished
-operations with the local extension before uninstalling it. Do not install both
-identities together: they contribute the same command and theme names.
+This identity has separate extension storage from the old
+`themer-local.themer-lab` build. Restore or keep unfinished operations with the
+old extension before uninstalling it. Do not install both identities together:
+they contribute the same command and theme names. Editable drafts and recovery
+journals are not automatically transferred between identities.
 
 ### Finish the listing and acceptance
 

@@ -9,9 +9,9 @@ and syntax colors, with previews that update as you work.
 **Status:** experimental source preview. The extension is not yet published on
 the Marketplace. Review builds are available as VSIX artifacts from successful
 [CI runs](https://github.com/arniebradfo/vs-code-plugin-themer-lab/actions/workflows/ci.yml)
-(a GitHub sign-in is required to download them). The local publisher is still a
-placeholder; the [release checklist](docs/development/publishing.md) tracks the
-remaining publication setup.
+(a GitHub sign-in is required to download them). The publisher is `arniebradfo`;
+the [release checklist](docs/development/publishing.md) tracks the remaining
+publication setup.
 
 ## Features
 
@@ -29,6 +29,16 @@ remaining publication setup.
   tinted overlays, active-item accents, bracket colors, and status-bar styling.
 - **Save or export.** Apply to User or Workspace settings, or export a
   standalone VS Code color-theme JSON file.
+
+## See it in action
+
+### Dark
+
+![Themer Lab's Dark theme builder beside a TypeScript sample with Live Preview enabled.](assets/screenshots/dark.png)
+
+### Light
+
+![Themer Lab's Light theme builder beside a TypeScript sample with Live Preview enabled.](assets/screenshots/light.png)
 
 ## Get started
 

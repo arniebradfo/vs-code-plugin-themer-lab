@@ -212,8 +212,8 @@ GitHub image links rewritten by VSCE. Their raster signatures are checked;
 SVG image assets, unreferenced images, source files, and maps remain excluded.
 A declared icon must be packaged and linked by the VSIX XML manifest.
 If the source has `LICENSE`, the archive must include the same nonempty bytes
-(VSCE names the packaged file `LICENSE.txt`). Local review builds can still use the
-placeholder publisher; they include the project's [MIT License](../../LICENSE).
+(VSCE names the packaged file `LICENSE.txt`). Review builds use publisher
+`arniebradfo` and include the project's [MIT License](../../LICENSE).
 
 The JSON output contains `schemaVersion: 1`, `commit`, `version`, `extensionId`,
 `packageName`, `sha256`, and sorted `files` (full ZIP member paths, excluding
@@ -250,9 +250,11 @@ policy before it can authenticate with OIDC. The unit tests verify that the
 installed CLI exposes the required option. No publishing token is stored in
 source or needed as a GitHub secret.
 
-`npm run package` permits the local placeholder publisher and includes the
+`npm run package` creates a review build with the configured publisher and
 project license. That is not Marketplace release approval.
-`npm run check:release` remains blocked until a real publisher is configured.
+`npm run check:release` still requires finalized, versioned release notes.
+Before replacing an old `themer-local.themer-lab` installation, follow the
+[publisher identity transition guidance](publishing.md#configure-the-marketplace-publisher-connection).
 
 ## Official references
 

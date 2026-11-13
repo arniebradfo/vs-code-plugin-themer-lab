@@ -633,7 +633,7 @@ export async function run(): Promise<void> {
   assert.ok(reportRoot, "The isolated launcher must provide a report directory.");
   const runtime = await verifySource();
   const source = { vscode: reference.vscode, theme: reference.theme, sources: reference.sources, runtime, themeSourcesVerified: true };
-  const extension = vscode.extensions.getExtension<ThemerApi>("themer-local.themer-lab");
+  const extension = vscode.extensions.getExtension<ThemerApi>("arniebradfo.themer-lab");
   assert.ok(extension, "The development extension must be registered.");
   const plugin = await extension.activate();
   assert.ok(plugin.testing);

@@ -17,3 +17,4 @@ Marketplace release.
   safe Marketplace/GitHub release reconciliation. Publishing remains disabled.
 - Opt-in isolated native release acceptance and documented owner launch gates.
 - MIT license for the project's original code, with third-party notices retained.
+- Marketplace publisher identity configured as `arniebradfo`; publishing remains disabled.
