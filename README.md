@@ -6,12 +6,8 @@ Create your own VS Code color theme without editing hundreds of color settings.
 Choose a background, text color, and accent. Themer Lab builds coordinated UI
 and syntax colors, with previews that update as you work.
 
-**Status:** experimental source preview. The extension is not yet published on
-the Marketplace. Review builds are available as VSIX artifacts from successful
-[CI runs](https://github.com/arniebradfo/vs-code-plugin-themer-lab/actions/workflows/ci.yml)
-(a GitHub sign-in is required to download them). The publisher is `arniebradfo`;
-the [release checklist](docs/development/publishing.md) tracks the remaining
-publication setup.
+**Themer Lab is experimental.** Install it from the
+[VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=arniebradfo.themer-lab).
 
 ## Features
 
@@ -44,8 +40,9 @@ publication setup.
 
 Requires **VS Code 1.143.0 or later**.
 
-1. Install the extension. For a downloaded `.vsix`, run
-   **Extensions: Install from VSIX...** from the Command Palette.
+1. Search for **Themer Lab** in Extensions and select **Install**. For a
+   downloaded `.vsix`, run **Extensions: Install from VSIX...** from the
+   Command Palette.
 2. Open the Command Palette and run **Themer Lab: Open Theme Builder**.
 3. Choose **Dark** or **Light**.
 4. Pick your background, Primary foreground, and Interaction accent colors.
@@ -177,6 +174,16 @@ of a theme file.
 - Older **Themer Lab Preview** and **Themer Lab Light Preview** selections are
   renamed automatically. Existing colors are copied to the new names, with the
   original scopes retained as backups. Pending recovery is handled first.
+
+## Supported environments
+
+The initial release targets local desktop VS Code on Windows, macOS, and Linux.
+VS Code 1.143.0 is the minimum supported version. The extension is disabled in
+Restricted Mode; only enable workspace trust for folders you trust.
+
+Remote SSH, WSL, development containers, and browser-based VS Code are not
+validated for this release. Automatic OS-theme switching can override the
+selected theme. Avoid simultaneous theme-setting writes from multiple windows.
 
 ## For contributors
 

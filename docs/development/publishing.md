@@ -3,8 +3,9 @@
 [Issue #11](https://github.com/arniebradfo/vs-code-plugin-themer-lab/issues/11)
 coordinates the first Marketplace launch and automatic updates.
 
-**Publishing is disabled.** The package uses publisher `arniebradfo` and version
-`0.1.0`. The project's original code is licensed under
+**Publishing requires explicit owner authorization and protected environment
+approval.** The package uses publisher `arniebradfo` and version `0.1.0`.
+The project's original code is licensed under
 [MIT](../../LICENSE). Review packages are not Marketplace releases.
 
 ## Release path
@@ -50,8 +51,9 @@ artwork uses CC BY 4.0.
 The owner has selected the existing
 [`arniebradfo` publisher](https://marketplace.visualstudio.com/manage/publishers/arniebradfo).
 The manifest and native test hosts use extension ID `arniebradfo.themer-lab`.
-Creating the publisher does not configure Trusted Publishing; complete the
+The owner confirmed an active Trusted Publishing policy matching the
 [secretless publishing setup](#configure-secretless-publishing) below.
+Its first token exchange is verified by the authorized publication job.
 
 This identity has separate extension storage from the old
 `themer-local.themer-lab` build. Restore or keep unfinished operations with the
@@ -100,8 +102,8 @@ approved `main` history. The workflow uses full commit SHAs, not a mutable
 branch head, to build and verify packages.
 
 Repository variable `MARKETPLACE_PUBLISH_ENABLED` defaults to `false`.
-The repository also explicitly sets it to `false`. Keep it disabled until the
-owner has completed the launch blockers and accepted a review candidate.
+Keep it disabled until the owner has authorized launch and the final review
+candidate has passed acceptance.
 Only then set it to `true` in repository **Settings > Secrets and variables >
 Actions > Variables**.
 
