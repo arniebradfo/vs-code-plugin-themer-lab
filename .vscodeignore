@@ -12,6 +12,7 @@ fixtures/**
 reports/**
 USER-NOTES.md
 artifacts/**
+assets/icon.svg
 out/**
 tsconfig.json
 package-lock.json

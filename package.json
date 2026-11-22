@@ -3,9 +3,10 @@
   "displayName": "Themer Lab: Live Theme Builder",
   "description": "Create a custom theme from a few colors. Preview UI and syntax highlighting live, then apply or export your theme.",
   "version": "0.1.0",
-  "publisher": "themer-local",
+  "publisher": "arniebradfo",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "icon": "assets/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/arniebradfo/vs-code-plugin-themer-lab.git"
@@ -99,7 +100,7 @@
     "@types/yauzl": "^3.4.0",
     "@types/yazl": "2.4.2",
     "@vscode/test-electron": "^3.1.0",
-    "@vscode/vsce": "^4.1.0",
+    "@vscode/vsce": "4.1.2-0",
     "esbuild": "^0.28.2",
     "marked": "^18.0.11",
     "parse5": "^8.0.1",

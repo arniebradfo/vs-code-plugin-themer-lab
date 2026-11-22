@@ -3,9 +3,10 @@
 [Issue #11](https://github.com/arniebradfo/vs-code-plugin-themer-lab/issues/11)
 coordinates the first Marketplace launch and automatic updates.
 
-**Publishing is disabled.** The package still uses `themer-local`, `UNLICENSED`,
-and version `0.1.0`. Review packages are not public releases. Creating the public
-source repository did not grant a project license.
+**Publishing requires explicit owner authorization and protected environment
+approval.** The package uses publisher `arniebradfo` and version `0.1.0`.
+The project's original code is licensed under
+[MIT](../../LICENSE). Review packages are not Marketplace releases.
 
 ## Release path
 
@@ -37,33 +38,34 @@ workflow and verify its actual results.
 
 ## What still needs the owner
 
-### Approve the license and publication rights
+### Confirm publication rights
 
-Choose the license for the original code and confirm the right to distribute it.
-Add the approved, nonempty text as root `LICENSE`. Update the manifest and
-lockfile license metadata. Retain the third-party notices and packaged license
-texts. Default theme data and runtime dependencies use MIT; Codicons artwork
-uses CC BY 4.0.
+The project's original code uses the [MIT License](../../LICENSE), with matching
+manifest and lockfile metadata. Confirm the right to publish the code and assets
+under their applicable terms. Retain the third-party notices and packaged
+license texts. Default theme data and runtime dependencies use MIT; Codicons
+artwork uses CC BY 4.0.
 
-### Choose and configure the Marketplace publisher
+### Configure the Marketplace publisher connection
 
-Sign in to [publisher management](https://marketplace.visualstudio.com/manage).
-Create or select a publisher and confirm its exact identifier. A GitHub username
-does not reserve a matching Marketplace publisher.
+The owner has selected the existing
+[`arniebradfo` publisher](https://marketplace.visualstudio.com/manage/publishers/arniebradfo).
+The manifest and native test hosts use extension ID `arniebradfo.themer-lab`.
+The owner confirmed an active Trusted Publishing policy matching the
+[secretless publishing setup](#configure-secretless-publishing) below.
+Its first token exchange is verified by the authorized publication job.
 
-Update `publisher` and the identity assertion in
-[the branding test](../../test/branding.test.ts). Keep the extension name
-`themer-lab` unless deliberately choosing a different extension identity.
-
-The public extension ID will be `<publisher>.themer-lab`. It has separate
-extension storage from the local-publisher build. Restore or keep unfinished
-operations with the local extension before uninstalling it. Do not install both
-identities together: they contribute the same command and theme names.
+This identity has separate extension storage from the old
+`themer-local.themer-lab` build. Restore or keep unfinished operations with the
+old extension before uninstalling it. Do not install both identities together:
+they contribute the same command and theme names. Editable drafts and recovery
+journals are not automatically transferred between identities.
 
 ### Finish the listing and acceptance
 
-- Add an approved original PNG icon and Dark/Light screenshots. Set `icon` in
-  the manifest and verify the packaged README image links.
+- The approved PNG icon and Dark/Light screenshots are included. The manifest
+  uses `assets/icon.png`; editable `assets/icon.svg` is source-only and excluded
+  from the VSIX. Verify the final packaged artwork and README image links.
 - Review the user guide, versioned changelog, and extension details page.
 - Install the exact final-publisher candidate in a clean profile.
 - Verify gallery, samples, both modes, Live Preview, both Apply targets, Cancel,
@@ -72,7 +74,8 @@ identities together: they contribute the same command and theme names.
   does not prove native paint, remote support, or Workspace Trust behavior.
 - Complete the applicable [product gates](../../PLAN.md) and
   [native acceptance checklist](acceptance.md).
-- Resolve or explicitly review the development advisory tracked in
+- Verify a clean full dependency audit as described in the
+  [tooling audit notes](#tooling-audit) for
   [#15](https://github.com/arniebradfo/vs-code-plugin-themer-lab/issues/15).
 
 Do not lower the VS Code engine requirement or add `extensionKind`/Workspace
@@ -99,8 +102,8 @@ approved `main` history. The workflow uses full commit SHAs, not a mutable
 branch head, to build and verify packages.
 
 Repository variable `MARKETPLACE_PUBLISH_ENABLED` defaults to `false`.
-The repository also explicitly sets it to `false`. Keep it disabled until the
-owner has completed the launch blockers and accepted a review candidate.
+Keep it disabled until the owner has authorized launch and the final review
+candidate has passed acceptance.
 Only then set it to `true` in repository **Settings > Secrets and variables >
 Actions > Variables**.
 
@@ -285,21 +288,24 @@ Rollback means restoring known-good code in a new PR and publishing it under a
 **higher** version. Marketplace versions and Git tags must not be overwritten.
 An older release completed during recovery is not marked latest over a newer one.
 
-## Known tooling blocker
+## Tooling audit
 
-The remaining advisory is minimatch
+The official [VSCE 4.1.2-0 prerelease](https://github.com/microsoft/vscode-vsce/releases/tag/v4.1.2-0)
+includes the upstream fix for minimatch
 [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249).
-The locked build dependency is `10.2.6`; the first reported patch is `11.0.1`.
-VSCE 4.1 declares `^10.2.6`, so forcing the patched major is not a supported
-resolution.
+The tool is pinned exactly to this release; its supported dependency range is
+`^11.0.1`, and the lockfile resolves minimatch `11.0.9`. VSCE retains Node 22
+and OIDC support. No transitive major override, downgrade, or audit waiver is
+used. Prefer a patched stable VSCE release when available, after validating it.
 
-This code only uses minimatch during packaging, not in the extension bundle.
-The advisory concerns attacker-controlled glob-pattern preprocessing.
-That does not authorize a waiver. CI records the full tooling audit and rejects
-high advisories; the public release path rejects moderate advisories too.
-Keep #15 open for a supported upstream update or an explicit owner-reviewed
-release policy change. TLS failure of a local audit endpoint is not clean
-audit evidence; use the hosted audit output.
+Run both `npm audit` and `npm audit --omit=dev` before release. Full and runtime
+audits on the public-registry hosted validation reported zero vulnerabilities.
+CI records the full audit and rejects high advisories; public publication
+still rejects moderate advisories too. A failed local audit endpoint is not
+clean audit evidence; use a successful hosted audit instead.
+
+Repository configuration and locked package URLs use only public npm. Private
+feeds and machine-specific network settings must remain outside the repository.
 
 ## Automatic updates for users
 

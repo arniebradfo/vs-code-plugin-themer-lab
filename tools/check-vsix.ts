@@ -407,7 +407,7 @@ export async function checkVsix(options: CheckVsixOptions): Promise<ReleaseManif
   if (existsSync(path.join(root, "LICENSE"))) {
     const expectedLicense = await readFile(path.join(root, "LICENSE"));
     if (!expectedLicense.toString("utf8").trim()) throw new Error("Source LICENSE must be nonempty.");
-    const license = [...files.keys()].find((name) => name.toLowerCase() === "extension/license");
+    const license = [...files.keys()].find((name) => /^extension\/license(?:\.md|\.txt)?$/i.test(name));
     if (!license || !requiredFile(files, license).equals(expectedLicense)) throw new Error("Packaged LICENSE must match the nonempty source LICENSE exactly.");
   }
   await validateXml(files, expected, readme, icon);

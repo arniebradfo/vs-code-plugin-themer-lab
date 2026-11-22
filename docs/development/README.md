@@ -48,7 +48,16 @@ Download it from a successful
 [CI run](https://github.com/arniebradfo/vs-code-plugin-themer-lab/actions/workflows/ci.yml).
 These artifacts are experimental builds, not Marketplace releases.
 
-The project npm configuration uses the public npm registry. Git attributes
+The project npm configuration and lockfile use only `https://registry.npmjs.org/`.
+No private feed or corporate proxy is required. Keep any machine-specific
+network overrides outside the repository; never commit their URLs or credentials.
+
+The packaging tool is pinned to the official **VSCE 4.1.2-0 prerelease** because
+it includes the upstream minimatch advisory fix while retaining Node 22 and
+OIDC support. See [tooling audit notes](publishing.md#tooling-audit) before
+changing that pin.
+
+Git attributes
 preserve CRLF in the sample corpus on every platform because the stored native
 evidence hashes those exact bytes. Keep that setting when recapturing evidence.
 Personal `USER-NOTES.md` files, local settings, credentials, and build outputs
@@ -211,9 +220,9 @@ are allowed when referenced by the manifest icon or packaged README, including
 GitHub image links rewritten by VSCE. Their raster signatures are checked;
 SVG image assets, unreferenced images, source files, and maps remain excluded.
 A declared icon must be packaged and linked by the VSIX XML manifest.
-If the source has `LICENSE`, the archive must
-include the same nonempty bytes. Local review builds can still use the
-placeholder publisher without a project license.
+If the source has `LICENSE`, the archive must include the same nonempty bytes
+(VSCE names the packaged file `LICENSE.txt`). Review builds use publisher
+`arniebradfo` and include the project's [MIT License](../../LICENSE).
 
 The JSON output contains `schemaVersion: 1`, `commit`, `version`, `extensionId`,
 `packageName`, `sha256`, and sorted `files` (full ZIP member paths, excluding
@@ -250,9 +259,11 @@ policy before it can authenticate with OIDC. The unit tests verify that the
 installed CLI exposes the required option. No publishing token is stored in
 source or needed as a GitHub secret.
 
-`npm run package` still permits an unlicensed local review build. That is not
-release approval or a license grant. `npm run check:release` intentionally
-fails until the publisher and project license are configured.
+`npm run package` creates a review build with the configured publisher and
+project license. That is not Marketplace release approval.
+`npm run check:release` still requires finalized, versioned release notes.
+Before replacing an old `themer-local.themer-lab` installation, follow the
+[publisher identity transition guidance](publishing.md#configure-the-marketplace-publisher-connection).
 
 ## Official references
 
