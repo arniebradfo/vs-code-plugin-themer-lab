@@ -7,7 +7,7 @@ import { requireRecord, requireString } from "../src/shared/validation";
 import { assertReleaseReady } from "./check-release";
 import { compareReleaseVersions } from "./release";
 import { galleryPackageHash, galleryVersions, reconcileMarketplace } from "./publish-release";
-import { publicationContext, releaseRepository, requireCommit, verifyCandidate } from "./release-workflow";
+import { ghJson, publicationContext, releaseRepository, requireCommit, verifyCandidate } from "./release-workflow";
 
 interface ReleaseAsset {
   name: string;
@@ -70,6 +70,24 @@ function gh(...args: string[]): void {
   execFileSync("gh", args, { stdio: "inherit" });
 }
 
+export function findGitHubRelease(pages: unknown, tag: string): Record<string, unknown> | undefined {
+  if (!Array.isArray(pages)) throw new Error("GitHub release pages must be an array.");
+  const matches = pages.flatMap((page) => {
+    if (!Array.isArray(page)) throw new Error("Each GitHub release page must be an array.");
+    return page.map((release) => requireRecord(release, "GitHub release"));
+  }).filter((release) => release.tag_name === tag);
+  if (matches.length > 1) throw new Error("GitHub returned duplicate releases for the version tag.");
+  return matches[0];
+}
+
+function releaseByTag(tag: string): unknown | undefined {
+  const published = optionalGitHubJson(`repos/${releaseRepository}/releases/tags/${tag}`);
+  if (published !== undefined) return published;
+  // The tag endpoint omits drafts; creating a draft does not create its tag.
+  return findGitHubRelease(ghJson("api", `repos/${releaseRepository}/releases?per_page=100`,
+    "--paginate", "--slurp"), tag);
+}
+
 function tagCommit(tag: string): string | undefined {
   let value = optionalGitHubJson(`repos/${releaseRepository}/git/ref/tags/${tag}`);
   if (value === undefined) return undefined;
@@ -122,12 +140,11 @@ async function main(): Promise<void> {
   const expected = { tag, commit: candidate.commit, notes };
   const existingTag = tagCommit(tag);
   if (existingTag) assertTagCommit(existingTag, candidate.commit);
-  const endpoint = `repos/${releaseRepository}/releases/tags/${tag}`;
-  let releaseValue = optionalGitHubJson(endpoint);
+  let releaseValue = releaseByTag(tag);
   if (releaseValue === undefined) {
     gh("release", "create", tag, "--repo", releaseRepository, "--target", candidate.commit,
       "--draft", "--title", `Themer Lab ${candidate.version}`, "--notes-file", path.join(candidateDirectory, "release-notes.md"));
-    releaseValue = optionalGitHubJson(endpoint);
+    releaseValue = releaseByTag(tag);
     if (releaseValue === undefined) throw new Error("The draft GitHub release was not saved.");
   }
   const release = validateGitHubRelease(releaseValue, expected);
@@ -138,7 +155,7 @@ async function main(): Promise<void> {
     if (asset) await verifyAsset(tag, asset, filename);
     else gh("release", "upload", tag, filename, "--repo", releaseRepository);
   }
-  const uploaded = validateGitHubRelease(optionalGitHubJson(endpoint), expected);
+  const uploaded = validateGitHubRelease(releaseByTag(tag), expected);
   for (const name of filenames) {
     const asset = uploaded.assets.find((asset) => asset.name === name);
     if (!asset) throw new Error(`GitHub release asset ${name} is missing.`);
@@ -148,7 +165,7 @@ async function main(): Promise<void> {
     const latest = !versions.some((version) => compareReleaseVersions(version.version, candidate.version) > 0);
     gh("release", "edit", tag, "--repo", releaseRepository, "--draft=false", `--latest=${latest}`);
   }
-  const final = validateGitHubRelease(optionalGitHubJson(endpoint), expected);
+  const final = validateGitHubRelease(releaseByTag(tag), expected);
   if (final.draft) throw new Error("The GitHub release is still a draft.");
   assertTagCommit(tagCommit(tag), candidate.commit);
   console.log(`Verified GitHub release ${tag} at ${candidate.commit} with the exact Marketplace VSIX.`);
