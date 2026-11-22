@@ -37,14 +37,21 @@ test("Marketplace metadata describes the theme builder without changing its exte
   ]);
 });
 
-test("the public lockfile resolves dependencies only from the public npm registry", async () => {
-  const lock = requireRecord(JSON.parse(await readFile(path.resolve(__dirname, "..", "package-lock.json"), "utf8")), "Lockfile");
+test("npm configuration and the lockfile use only the public npm registry", async () => {
+  const root = path.resolve(__dirname, "..");
+  const config = await readFile(path.join(root, ".npmrc"), "utf8");
+  assert.equal(config.trim(), "registry=https://registry.npmjs.org/",
+    "Keep machine-specific registry, proxy, and authentication settings outside the repository.");
+  const lock = requireRecord(JSON.parse(await readFile(path.join(root, "package-lock.json"), "utf8")), "Lockfile");
   const packages = requireRecord(lock.packages, "Locked packages");
   for (const [name, value] of Object.entries(packages)) {
     const dependency = requireRecord(value, `Locked ${name}`);
     if (dependency.resolved !== undefined) {
       assert.ok(typeof dependency.resolved === "string", name);
-      assert.ok(dependency.resolved.startsWith("https://registry.npmjs.org/"), name);
+      const url = new URL(dependency.resolved);
+      assert.equal(url.origin, "https://registry.npmjs.org", name);
+      assert.equal(url.username, "", name);
+      assert.equal(url.password, "", name);
     }
   }
 });

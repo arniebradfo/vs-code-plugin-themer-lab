@@ -48,7 +48,16 @@ Download it from a successful
 [CI run](https://github.com/arniebradfo/vs-code-plugin-themer-lab/actions/workflows/ci.yml).
 These artifacts are experimental builds, not Marketplace releases.
 
-The project npm configuration uses the public npm registry. Git attributes
+The project npm configuration and lockfile use only `https://registry.npmjs.org/`.
+No private feed or corporate proxy is required. Keep any machine-specific
+network overrides outside the repository; never commit their URLs or credentials.
+
+The packaging tool is pinned to the official **VSCE 4.1.2-0 prerelease** because
+it includes the upstream minimatch advisory fix while retaining Node 22 and
+OIDC support. See [tooling audit notes](publishing.md#tooling-audit) before
+changing that pin.
+
+Git attributes
 preserve CRLF in the sample corpus on every platform because the stored native
 evidence hashes those exact bytes. Keep that setting when recapturing evidence.
 Personal `USER-NOTES.md` files, local settings, credentials, and build outputs

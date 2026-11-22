@@ -19,3 +19,5 @@ Marketplace release.
 - MIT license for the project's original code, with third-party notices retained.
 - Marketplace publisher identity configured as `arniebradfo`; publishing remains disabled.
 - Original rainbow logo for the extension listing.
+- Packaging advisory fixed with the official VSCE 4.1.2-0 release and patched
+  minimatch; public npm configuration and lockfile portability remain enforced.

@@ -72,7 +72,8 @@ journals are not automatically transferred between identities.
   does not prove native paint, remote support, or Workspace Trust behavior.
 - Complete the applicable [product gates](../../PLAN.md) and
   [native acceptance checklist](acceptance.md).
-- Resolve or explicitly review the development advisory tracked in
+- Verify a clean full dependency audit as described in the
+  [tooling audit notes](#tooling-audit) for
   [#15](https://github.com/arniebradfo/vs-code-plugin-themer-lab/issues/15).
 
 Do not lower the VS Code engine requirement or add `extensionKind`/Workspace
@@ -285,21 +286,24 @@ Rollback means restoring known-good code in a new PR and publishing it under a
 **higher** version. Marketplace versions and Git tags must not be overwritten.
 An older release completed during recovery is not marked latest over a newer one.
 
-## Known tooling blocker
+## Tooling audit
 
-The remaining advisory is minimatch
+The official [VSCE 4.1.2-0 prerelease](https://github.com/microsoft/vscode-vsce/releases/tag/v4.1.2-0)
+includes the upstream fix for minimatch
 [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249).
-The locked build dependency is `10.2.6`; the first reported patch is `11.0.1`.
-VSCE 4.1 declares `^10.2.6`, so forcing the patched major is not a supported
-resolution.
+The tool is pinned exactly to this release; its supported dependency range is
+`^11.0.1`, and the lockfile resolves minimatch `11.0.9`. VSCE retains Node 22
+and OIDC support. No transitive major override, downgrade, or audit waiver is
+used. Prefer a patched stable VSCE release when available, after validating it.
 
-This code only uses minimatch during packaging, not in the extension bundle.
-The advisory concerns attacker-controlled glob-pattern preprocessing.
-That does not authorize a waiver. CI records the full tooling audit and rejects
-high advisories; the public release path rejects moderate advisories too.
-Keep #15 open for a supported upstream update or an explicit owner-reviewed
-release policy change. TLS failure of a local audit endpoint is not clean
-audit evidence; use the hosted audit output.
+Run both `npm audit` and `npm audit --omit=dev` before release. Full and runtime
+audits on the public-registry hosted validation reported zero vulnerabilities.
+CI records the full audit and rejects high advisories; public publication
+still rejects moderate advisories too. A failed local audit endpoint is not
+clean audit evidence; use a successful hosted audit instead.
+
+Repository configuration and locked package URLs use only public npm. Private
+feeds and machine-specific network settings must remain outside the repository.
 
 ## Automatic updates for users
 
