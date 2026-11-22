@@ -61,8 +61,9 @@ journals are not automatically transferred between identities.
 
 ### Finish the listing and acceptance
 
-- Add an approved original PNG icon and Dark/Light screenshots. Set `icon` in
-  the manifest and verify the packaged README image links.
+- The approved PNG icon and Dark/Light screenshots are included. The manifest
+  uses `assets/icon.png`; editable `assets/icon.svg` is source-only and excluded
+  from the VSIX. Verify the final packaged artwork and README image links.
 - Review the user guide, versioned changelog, and extension details page.
 - Install the exact final-publisher candidate in a clean profile.
 - Verify gallery, samples, both modes, Live Preview, both Apply targets, Cancel,

@@ -18,3 +18,4 @@ Marketplace release.
 - Opt-in isolated native release acceptance and documented owner launch gates.
 - MIT license for the project's original code, with third-party notices retained.
 - Marketplace publisher identity configured as `arniebradfo`; publishing remains disabled.
+- Original rainbow logo for the extension listing.
