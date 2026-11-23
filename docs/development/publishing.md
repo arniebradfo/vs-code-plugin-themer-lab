@@ -260,6 +260,11 @@ and has no OIDC permission. It checks existing tags, notes, and asset digests;
 uploads missing assets without overwriting existing ones; and publishes the
 draft only after all assets match. A version tag must identify the exact source.
 
+GitHub's release-by-tag endpoint omits draft releases, and a new draft does not
+create its tag. Release completion also checks the paginated release list so
+the first draft and interrupted draft uploads can be recovered without creating
+duplicates or changing the retained VSIX.
+
 Verify the final Marketplace listing and install from Marketplace in a clean
 profile. Update the user guide's experimental status and installation link only
 after the release is accepted. Record the evidence in #11.

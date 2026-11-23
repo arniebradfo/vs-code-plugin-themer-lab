@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { assertTagCommit, validateGitHubRelease } from "../tools/github-release";
+import { assertTagCommit, findGitHubRelease, validateGitHubRelease } from "../tools/github-release";
 
 const commit = "a".repeat(40);
 const expected = { tag: "v0.1.0", commit, notes: "- Release notes.\n" };
@@ -32,4 +32,17 @@ test("release completion never moves an existing version tag to different code",
   assertTagCommit(commit, commit);
   assert.throws(() => assertTagCommit("b".repeat(40), commit), /Do not move/);
   assert.throws(() => assertTagCommit("main", commit), /full lowercase/);
+});
+
+test("draft release discovery finds the exact tag across paginated releases before a tag exists", () => {
+  assert.deepEqual(findGitHubRelease([[{ ...release, tag_name: "v0.0.9" }], [release]], expected.tag), release);
+  assert.equal(findGitHubRelease([[]], expected.tag), undefined);
+  assert.equal(findGitHubRelease([[release]], "v0.1.1"), undefined);
+});
+
+test("draft release discovery rejects malformed pages and ambiguous duplicate releases", () => {
+  for (const pages of [null, {}, [null], [[null]]]) {
+    assert.throws(() => findGitHubRelease(pages, expected.tag), /GitHub release/);
+  }
+  assert.throws(() => findGitHubRelease([[release], [release]], expected.tag), /duplicate/);
 });
