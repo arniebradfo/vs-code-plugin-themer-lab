@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.1.1] - 2026-11-23
+
 - Update the development ZIP writer and matching types, plus the Markdown,
   HTML, and XML parsers used to validate release packages.
 - Fix automatic GitHub release completion when a draft exists before its tag.
