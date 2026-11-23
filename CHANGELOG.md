@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Update the development ZIP writer and matching types, plus the Markdown,
+  HTML, and XML parsers used to validate release packages.
+- Fix automatic GitHub release completion when a draft exists before its tag.
+- Keep theme generation, saved settings, and runtime dependencies unchanged.
+
 ## [0.1.0] - 2026-11-22
 
 Initial experimental release of Themer Lab: Live Theme Builder.

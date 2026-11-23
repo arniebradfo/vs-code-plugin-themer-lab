@@ -1,10 +1,13 @@
 # Publishing Themer Lab
 
 [Issue #11](https://github.com/arniebradfo/vs-code-plugin-themer-lab/issues/11)
-coordinates the first Marketplace launch and automatic updates.
+records the completed first Marketplace launch.
+[Issue #30](https://github.com/arniebradfo/vs-code-plugin-themer-lab/issues/30)
+tracks the first automated update and its installation evidence.
 
 **Publishing requires explicit owner authorization and protected environment
-approval.** The package uses publisher `arniebradfo` and version `0.1.0`.
+approval.** The package uses publisher `arniebradfo`; `package.json` records its
+current version.
 The project's original code is licensed under
 [MIT](../../LICENSE). Review packages are not Marketplace releases.
 
@@ -267,7 +270,7 @@ duplicates or changing the retained VSIX.
 
 Verify the final Marketplace listing and install from Marketplace in a clean
 profile. Update the user guide's experimental status and installation link only
-after the release is accepted. Record the evidence in #11.
+after the release is accepted. Record follow-up update evidence in #30.
 
 ## Failures, retries, and rollback
 
@@ -324,4 +327,4 @@ transition to the final identity once. Never change their global update
 preferences to force updates.
 
 Verify one follow-up release and an actual Marketplace-installed update before
-closing #11. A green review run is not that end-to-end proof.
+closing #30. A green review run is not that end-to-end proof.
